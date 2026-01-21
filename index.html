@@ -12,9 +12,11 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
   <link rel="manifest" href="/site.webmanifest" />
 
+  <!-- Preconnect to external domains -->
+  <link rel="preconnect" href="https://generativelanguage.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://text.pollinations.ai" crossorigin>
+
   <!-- Primary Meta Tags -->
-  <meta http-equiv="Content-Security-Policy"
-    content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://generativelanguage.googleapis.com https://text.pollinations.ai;">
   <title>Provision Land Limited - Genuine Land for Sale in Kenya</title>
   <meta name="title" content="Provision Land Limited - Genuine Land for Sale in Kenya">
   <meta name="description"
@@ -47,88 +49,16 @@
   <meta name="geo.position" content="-1.038757;37.083375" />
   <meta name="ICBM" content="-1.038757, 37.083375" />
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link
+  <!-- Preload fonts -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload"
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap"
-    rel="stylesheet">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            serif: ['Playfair Display', 'serif'],
-          },
-          colors: {
-            brand: {
-              50: '#f0faff',
-              100: '#e0f5fe',
-              200: '#b9ebfe',
-              300: '#7cdcfd',
-              400: '#36cafa',
-              500: '#00AEEF', // Exact Flyer Blue
-              600: '#0090cc',
-              700: '#0072a3',
-              800: '#006088',
-              900: '#064f6f',
-              950: '#043249',
-            },
-            accent: {
-              500: '#ED1C24', // Exact Flyer Red
-              600: '#c51017',
-              700: '#a30d12',
-            }
-          },
-          animation: {
-            'ken-burns': 'kenBurns 20s infinite alternate',
-            'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
-          },
-          keyframes: {
-            kenBurns: {
-              '0%': { transform: 'scale(1) translate(0, 0)' },
-              '100%': { transform: 'scale(1.15) translate(-2%, -2%)' },
-            },
-            fadeInUp: {
-              '0%': { opacity: '0', transform: 'translateY(20px)' },
-              '100%': { opacity: '1', transform: 'translateY(0)' },
-            }
-          }
-        },
-      },
-    }
-  </script>
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-    }
-
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
-      font-family: 'Playfair Display', serif;
-    }
-
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: #f1f1f1;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #00AEEF;
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #0090cc;
-    }
-  </style>
+    as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap"
+      rel="stylesheet">
+  </noscript>
 </head>
 
 <body class="bg-gray-50 text-slate-800 antialiased">

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ArrowRight, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { PROPERTIES, SERVICES } from '../constants';
-import { PropertyCard } from '../components/PropertyCard';
+import { FeaturedPropertyCard } from '../components/PropertyCard';
 
 const HERO_SLIDES = [
   {
@@ -59,7 +59,7 @@ export const Home: React.FC = () => {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
-    }, 6000); // Change slide every 6 seconds
+    }, 4000); // Change slide every 4 seconds
     return () => clearInterval(timer);
   }, []);
 
@@ -79,10 +79,11 @@ export const Home: React.FC = () => {
         <title>Home - Provision Land Limited | Land for Sale in Kenya</title>
         <meta name="description" content="Find your dream plot with Provision Land Limited. We offer genuine, affordable land in Thika, Makutano, Sagana, and Machakos with ready title deeds." />
         <link rel="canonical" href="https://provisionlands.co.ke/" />
+        <link rel="preload" as="image" href="/carousel1.webp" fetchpriority="high" />
       </Helmet>
 
       {/* Infinite Carousel Hero Section */}
-      <section className="relative h-[650px] md:h-[800px] flex items-center overflow-hidden bg-brand-900 group">
+      <section className="relative h-[250px] md:h-[500px] flex items-center overflow-hidden bg-brand-900 group">
 
         {/* Slides */}
         {HERO_SLIDES.map((slide, index) => (
@@ -95,7 +96,11 @@ export const Home: React.FC = () => {
               <img
                 src={slide.image}
                 alt={slide.title}
-                className={`w-full h-full object-cover transform transition-transform duration-[10000ms] ease-linear ${index === currentSlide ? 'scale-110' : 'scale-100'
+                width="1920"
+                height="500"
+                fetchPriority={index === 0 ? 'high' : 'low'}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                className={`w-full h-full object-cover object-center transform transition-transform duration-[8000ms] ease-linear ${index === currentSlide ? 'scale-105' : 'scale-100'
                   }`}
               />
 
@@ -106,28 +111,18 @@ export const Home: React.FC = () => {
         {/* Carousel Navigation Arrows */}
         <button
           onClick={prevSlide}
-          className="absolute left-4 z-30 p-2 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition opacity-0 group-hover:opacity-100 hidden md:block"
+          aria-label="Previous slide"
+          className="absolute left-4 z-30 p-3 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition opacity-0 group-hover:opacity-100 hidden md:block min-w-[48px] min-h-[48px]"
         >
           <ChevronLeft size={32} />
         </button>
         <button
           onClick={nextSlide}
-          className="absolute right-4 z-30 p-2 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition opacity-0 group-hover:opacity-100 hidden md:block"
+          aria-label="Next slide"
+          className="absolute right-4 z-30 p-3 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition opacity-0 group-hover:opacity-100 hidden md:block min-w-[48px] min-h-[48px]"
         >
           <ChevronRight size={32} />
         </button>
-
-        {/* Carousel Indicators */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30 flex space-x-2">
-          {HERO_SLIDES.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setCurrentSlide(idx)}
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${idx === currentSlide ? 'w-8 bg-accent-500' : 'bg-white/50 hover:bg-white'
-                }`}
-            />
-          ))}
-        </div>
 
 
       </section>
@@ -165,8 +160,8 @@ export const Home: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-end mb-12">
             <div>
-              <h2 className="text-3xl font-serif font-bold text-slate-900 mb-2">New Arrivals</h2>
-              <p className="text-gray-600">Fresh listings from Thika, Murang'a, and Machakos.</p>
+              <h2 className="text-3xl font-serif font-bold text-slate-900 mb-2">Featured Properties</h2>
+              <p className="text-gray-600">Handpicked prime plots from Thika, Murang'a, and Machakos.</p>
             </div>
             <Link to="/properties" className="hidden md:flex items-center gap-2 text-brand-600 font-bold hover:text-accent-600 transition">
               View All Properties <ArrowRight size={20} />
@@ -175,7 +170,7 @@ export const Home: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {featuredProperties.map((prop) => (
-              <PropertyCard key={prop.id} property={prop} />
+              <FeaturedPropertyCard key={prop.id} property={prop} />
             ))}
           </div>
 
@@ -192,7 +187,7 @@ export const Home: React.FC = () => {
         <div className="absolute top-0 right-0 w-1/3 h-full bg-brand-800 skew-x-12 transform translate-x-20 opacity-50"></div>
         <div className="container mx-auto px-4 relative z-10 flex flex-col md:flex-row items-center gap-12">
           <div className="flex-1">
-            <img src="/our core value.webp" alt="Why Choose Us" className="rounded-2xl shadow-2xl border-4 border-brand-700" loading="lazy" />
+            <img src="/our core value.webp" alt="Why Choose Us - Core Values" width="800" height="600" className="rounded-2xl shadow-2xl border-4 border-brand-700" loading="lazy" />
           </div>
           <div className="flex-1">
             <h2 className="text-3xl md:text-4xl font-serif font-bold mb-6">Our Core Values</h2>
