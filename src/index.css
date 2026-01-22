@@ -7,7 +7,12 @@ body {
   font-family: 'Inter', sans-serif;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: 'Playfair Display', serif;
 }
 
@@ -46,7 +51,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Ensure minimum touch target sizes */
-button, a {
+button,
+a {
   min-height: 44px;
   min-width: 44px;
   display: inline-flex;
@@ -62,18 +68,13 @@ button, a {
 
 /* Fix contrast issues for brand colors */
 .text-brand-500 {
-  color: #0072a3 !important; /* Darker for better contrast on white */
+  color: #0072a3 !important;
+  /* Darker for better contrast on white */
 }
 
 .text-accent-500 {
-  color: #c51017 !important; /* Darker red for better contrast */
+  color: #c51017 !important;
+  /* Darker red for better contrast */
 }
 
 /* Ensure footer links have proper contrast */
-footer a {
-  color: #e0f5fe !important; /* Light blue with good contrast on dark background */
-}
-
-footer a:hover {
-  color: #ffffff !important;
-}

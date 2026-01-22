@@ -7,7 +7,7 @@ interface FeaturedPropertyCardProps {
   property: Property;
 }
 
-export const FeaturedPropertyCard: React.FC<FeaturedPropertyCardProps> = ({ property }) => {
+const FeaturedPropertyCardBase: React.FC<FeaturedPropertyCardProps> = ({ property }) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
@@ -27,15 +27,13 @@ export const FeaturedPropertyCard: React.FC<FeaturedPropertyCardProps> = ({ prop
     return price.toString();
   };
 
-
-
   return (
     <div className="group bg-white rounded-lg shadow-md overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
       {/* Image Container with Overlays */}
       <div className="relative overflow-hidden h-64 bg-gray-100">
         {/* Loading Skeleton */}
         <div
-          className={`absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center transition-opacity duration-500 ${isImageLoaded ? 'opacity-0' : 'opacity-100'}`}
+          className={`absolute inset-0 bg-gray-200 flex items-center justify-center transition-opacity duration-500 ${isImageLoaded ? 'opacity-0 z-0' : 'opacity-100 z-20 animate-pulse'}`}
         >
           <Loader className="w-6 h-6 text-gray-400 animate-spin" />
         </div>
@@ -113,6 +111,9 @@ export const FeaturedPropertyCard: React.FC<FeaturedPropertyCardProps> = ({ prop
     </div>
   );
 };
+
+// Memoize to prevent re-renders when parent carousel state changes
+export const FeaturedPropertyCard = React.memo(FeaturedPropertyCardBase);
 
 // Keep the original PropertyCard for other pages
 export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => {

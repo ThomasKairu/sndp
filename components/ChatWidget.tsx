@@ -4,7 +4,7 @@ import { getChatResponse } from '../services/geminiService';
 
 const ChatWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<{role: 'user' | 'model', text: string}[]>([
+  const [messages, setMessages] = useState<{ role: 'user' | 'model', text: string }[]>([
     { role: 'model', text: 'Jambo! Welcome to Provision Land. How can I help you find your dream property today?' }
   ]);
   const [input, setInput] = useState('');
@@ -22,16 +22,11 @@ const ChatWidget: React.FC = () => {
     scrollToBottom();
   }, [messages, isOpen, leadCaptured]);
 
-  const handleLeadDetected = (details: {phoneNumber: string, customerName?: string, inquirySummary: string}) => {
+  const handleLeadDetected = (details: { phoneNumber: string, customerName?: string, inquirySummary: string }) => {
     // Simulate sending logic
-    console.log("--------------- LEAD CAPTURED ---------------");
-    console.log("To: sales@provisionlands.co.ke");
-    console.log("Subject: NEW LEAD - Website Chatbot");
-    console.log(`Customer: ${details.customerName || 'Anonymous'}`);
-    console.log(`Phone: ${details.phoneNumber}`);
-    console.log(`Summary: ${details.inquirySummary}`);
-    console.log("---------------------------------------------");
-    
+    // Simulate sending logic
+    console.log("Lead captured and processed internally.");
+
     setLeadCaptured(true);
     setTimeout(() => setLeadCaptured(false), 5000); // Hide notification after 5s
   };
@@ -64,11 +59,11 @@ const ChatWidget: React.FC = () => {
     return text.split(urlRegex).map((part, i) => {
       if (part.match(urlRegex)) {
         return (
-          <a 
-            key={i} 
-            href={part} 
-            target="_blank" 
-            rel="noopener noreferrer" 
+          <a
+            key={i}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
             className={`underline break-all ${role === 'user' ? 'text-white font-bold hover:text-brand-100' : 'text-brand-600 hover:text-brand-800'}`}
           >
             {part}
@@ -83,13 +78,13 @@ const ChatWidget: React.FC = () => {
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
       {/* Lead Captured Toast */}
       {leadCaptured && (
-         <div className="mb-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 animate-fade-in-up">
-            <CheckCircle size={20} />
-            <div>
-              <p className="font-bold text-sm">Details Sent to Sales Team!</p>
-              <p className="text-xs text-green-100">They will contact you shortly.</p>
-            </div>
-         </div>
+        <div className="mb-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 animate-fade-in-up">
+          <CheckCircle size={20} />
+          <div>
+            <p className="font-bold text-sm">Details Sent to Sales Team!</p>
+            <p className="text-xs text-green-100">They will contact you shortly.</p>
+          </div>
+        </div>
       )}
 
       {isOpen && (
@@ -106,15 +101,14 @@ const ChatWidget: React.FC = () => {
               <X size={20} />
             </button>
           </div>
-          
+
           <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
             {messages.map((msg, idx) => (
               <div key={idx} className={`mb-4 flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] p-3 rounded-lg text-sm whitespace-pre-wrap ${
-                  msg.role === 'user' 
-                    ? 'bg-brand-600 text-white rounded-tr-none shadow-md' 
+                <div className={`max-w-[80%] p-3 rounded-lg text-sm whitespace-pre-wrap ${msg.role === 'user'
+                    ? 'bg-brand-600 text-white rounded-tr-none shadow-md'
                     : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none shadow-sm'
-                }`}>
+                  }`}>
                   {renderMessage(msg.text, msg.role)}
                 </div>
               </div>
@@ -140,7 +134,7 @@ const ChatWidget: React.FC = () => {
                 placeholder="Ask about plots, prices..."
                 className="flex-1 p-2 bg-brand-600 text-white placeholder:text-brand-200 border border-brand-500 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-400 text-sm shadow-inner"
               />
-              <button 
+              <button
                 onClick={handleSend}
                 disabled={isLoading}
                 className="p-2 bg-brand-800 text-white rounded-full hover:bg-brand-900 transition disabled:opacity-50 shadow-md"
@@ -151,7 +145,7 @@ const ChatWidget: React.FC = () => {
           </div>
         </div>
       )}
-      
+
       <button
         onClick={toggleChat}
         className={`${isOpen ? 'hidden' : 'flex'} items-center justify-center w-14 h-14 bg-brand-600 hover:bg-brand-500 text-white rounded-full shadow-lg transition-transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-brand-300`}

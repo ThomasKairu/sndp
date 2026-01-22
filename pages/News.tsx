@@ -23,16 +23,16 @@ export const NewsPage: React.FC = () => {
           <img src={selectedPost.image} alt={selectedPost.title} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-black/50"></div>
           <div className="absolute bottom-0 left-0 w-full p-8 md:p-16 text-white container mx-auto">
-            <button 
+            <button
               onClick={() => setSelectedPost(null)}
               className="flex items-center gap-2 text-sm font-bold bg-white/20 backdrop-blur-md px-4 py-2 rounded-full hover:bg-white/30 transition mb-6 w-fit"
             >
               <ArrowLeft size={16} /> Back to News
             </button>
             <div className="flex items-center gap-4 text-sm mb-4 text-brand-100">
-               <span className="flex items-center gap-1"><Calendar size={14} /> {selectedPost.date}</span>
-               <span className="flex items-center gap-1"><Tag size={14} /> {selectedPost.category}</span>
-               <span className="flex items-center gap-1"><Clock size={14} /> 5 min read</span>
+              <span className="flex items-center gap-1"><Calendar size={14} /> {selectedPost.date}</span>
+              <span className="flex items-center gap-1"><Tag size={14} /> {selectedPost.category}</span>
+              <span className="flex items-center gap-1"><Clock size={14} /> 5 min read</span>
             </div>
             <h1 className="text-3xl md:text-5xl font-serif font-bold leading-tight max-w-4xl">{selectedPost.title}</h1>
           </div>
@@ -40,36 +40,36 @@ export const NewsPage: React.FC = () => {
 
         {/* Article Content */}
         <div className="container mx-auto px-4 py-16 max-w-4xl">
-           <div className="prose prose-lg prose-slate max-w-none">
-             {/* Render content preserving newlines for paragraphs */}
-             {selectedPost.content.split('\n\n').map((paragraph, idx) => {
-               // Simple markdown-like parser for bold text (**text**)
-               const parts = paragraph.split(/(\*\*.*?\*\*)/g);
-               return (
-                 <p key={idx} className="mb-6 text-gray-700 leading-relaxed text-lg">
-                   {parts.map((part, i) => {
-                     if (part.startsWith('**') && part.endsWith('**')) {
-                       return <strong key={i} className="text-slate-900 font-bold">{part.slice(2, -2)}</strong>;
-                     }
-                     return part;
-                   })}
-                 </p>
-               );
-             })}
-           </div>
+          <div className="prose prose-lg prose-slate max-w-none">
+            {/* Render content preserving newlines for paragraphs */}
+            {selectedPost.content.split('\n\n').map((paragraph, idx) => {
+              // Simple markdown-like parser for bold text (**text**)
+              const parts = paragraph.split(/(\*\*.*?\*\*)/g);
+              return (
+                <p key={idx} className="mb-6 text-gray-700 leading-relaxed text-lg">
+                  {parts.map((part, i) => {
+                    if (part.startsWith('**') && part.endsWith('**')) {
+                      return <strong key={i} className="text-slate-900 font-bold">{part.slice(2, -2)}</strong>;
+                    }
+                    return part;
+                  })}
+                </p>
+              );
+            })}
+          </div>
 
-           <div className="mt-12 pt-12 border-t border-gray-100">
-             <h3 className="text-2xl font-bold text-slate-900 mb-6">Interested in this opportunity?</h3>
-             <div className="bg-brand-50 p-8 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6">
-               <div>
-                 <p className="font-bold text-brand-900 text-lg">Talk to an expert today.</p>
-                 <p className="text-gray-600">Our team can guide you through the investment process in {selectedPost.category} areas.</p>
-               </div>
-               <a href="/contact" className="bg-brand-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-brand-700 transition whitespace-nowrap">
-                 Contact Us
-               </a>
-             </div>
-           </div>
+          <div className="mt-12 pt-12 border-t border-gray-100">
+            <h3 className="text-2xl font-bold text-slate-900 mb-6">Interested in this opportunity?</h3>
+            <div className="bg-brand-50 p-8 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6">
+              <div>
+                <p className="font-bold text-brand-900 text-lg">Talk to an expert today.</p>
+                <p className="text-gray-600">Our team can guide you through the investment process in {selectedPost.category} areas.</p>
+              </div>
+              <a href="/contact" className="bg-brand-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-brand-700 transition whitespace-nowrap">
+                Contact Us
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -82,16 +82,74 @@ export const NewsPage: React.FC = () => {
         <title>News & Market Insights - Provision Land Limited</title>
         <meta name="description" content="Stay updated with the latest real estate trends, market analysis, and land investment opportunities in Kenya." />
         <link rel="canonical" href="https://provisionlands.co.ke/news" />
+
+        {/* Schema.org JSON-LD for News/Blog Page */}
+        <script type="application/ld+json">{`
+          {
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "Blog",
+                "@id": "https://provisionlands.co.ke/news#blog",
+                "url": "https://provisionlands.co.ke/news",
+                "name": "Provision Land News & Market Insights",
+                "description": "Stay updated with the latest real estate trends, market analysis, and land investment opportunities in Kenya.",
+                "publisher": {"@id": "https://provisionlands.co.ke/#organization"},
+                "blogPost": [
+                  {
+                    "@type": "BlogPosting",
+                    "headline": "The Road to Wealth: How the Kenol-Sagana-Marua Highway is Transforming Central Kenya",
+                    "description": "The completion of the Kenol-Sagana-Marua dual carriageway has officially opened up the Mt. Kenya region, making towns like Makutano and Sagana the hottest investment hubs of 2025.",
+                    "image": "https://provisionlands.co.ke/kenya-infrastructure.webp",
+                    "datePublished": "2025-12-15",
+                    "dateModified": "2025-12-15",
+                    "author": {"@id": "https://provisionlands.co.ke/#organization"},
+                    "publisher": {"@id": "https://provisionlands.co.ke/#organization"},
+                    "articleSection": "Infrastructure",
+                    "wordCount": 500,
+                    "mainEntityOfPage": "https://provisionlands.co.ke/news"
+                  },
+                  {
+                    "@type": "BlogPosting",
+                    "headline": "The Digital Shift: Navigating Land Transactions on Ardhisasa in 2025",
+                    "description": "Gone are the days of missing files and manual searches. The Ardhisasa platform has revolutionized land dealings in Kenya, ensuring transparency and speed for title deed processing.",
+                    "image": "https://provisionlands.co.ke/ardhisasa-digital.webp",
+                    "datePublished": "2025-11-22",
+                    "dateModified": "2025-11-22",
+                    "author": {"@id": "https://provisionlands.co.ke/#organization"},
+                    "publisher": {"@id": "https://provisionlands.co.ke/#organization"},
+                    "articleSection": "Legal & Tech",
+                    "wordCount": 450,
+                    "mainEntityOfPage": "https://provisionlands.co.ke/news"
+                  },
+                  {
+                    "@type": "BlogPosting",
+                    "headline": "Why Thika and Machakos are the New Nairobi: The 2025 Housing Boom",
+                    "description": "As Nairobi becomes saturated, the savvy investor is looking at the Satellite Jewels—Thika and Machakos. Affordable land, better air quality, and spacious living are driving the exodus.",
+                    "image": "https://provisionlands.co.ke/real-estate-boom.webp",
+                    "datePublished": "2025-12-02",
+                    "dateModified": "2025-12-02",
+                    "author": {"@id": "https://provisionlands.co.ke/#organization"},
+                    "publisher": {"@id": "https://provisionlands.co.ke/#organization"},
+                    "articleSection": "Market Trends",
+                    "wordCount": 550,
+                    "mainEntityOfPage": "https://provisionlands.co.ke/news"
+                  }
+                ]
+              }
+            ]
+          }
+        `}</script>
       </Helmet>
       <div className="relative bg-brand-900 text-white py-20 text-center">
-          <div className="absolute inset-0">
-            <img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1600&q=80" className="w-full h-full object-cover opacity-20" alt="Background" />
-            <div className="absolute inset-0 bg-gradient-to-t from-brand-900 via-transparent to-transparent"></div>
-          </div>
-          <div className="relative z-10 container mx-auto px-4">
-            <h1 className="text-4xl font-serif font-bold mb-2">News & Market Insights</h1>
-            <p className="text-brand-200 text-lg">Trusted analysis on the Kenyan Real Estate Market.</p>
-          </div>
+        <div className="absolute inset-0">
+          <img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1600&q=80" className="w-full h-full object-cover opacity-20" alt="Background" />
+          <div className="absolute inset-0 bg-gradient-to-t from-brand-900 via-transparent to-transparent"></div>
+        </div>
+        <div className="relative z-10 container mx-auto px-4">
+          <h1 className="text-4xl font-serif font-bold mb-2">News & Market Insights</h1>
+          <p className="text-brand-200 text-lg">Trusted analysis on the Kenyan Real Estate Market.</p>
+        </div>
       </div>
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -105,7 +163,7 @@ export const NewsPage: React.FC = () => {
                   <span className="flex items-center gap-1"><Calendar size={12} /> {post.date}</span>
                   <span className="flex items-center gap-1 text-brand-600 font-bold uppercase tracking-wider text-[10px]">{post.category}</span>
                 </div>
-                <h3 
+                <h3
                   onClick={() => setSelectedPost(post)}
                   className="text-xl font-bold mb-3 hover:text-brand-600 cursor-pointer text-slate-900 leading-snug"
                 >
@@ -113,7 +171,7 @@ export const NewsPage: React.FC = () => {
                 </h3>
                 <p className="text-gray-600 text-sm mb-6 line-clamp-3">{post.excerpt}</p>
                 <div className="mt-auto">
-                  <button 
+                  <button
                     onClick={() => setSelectedPost(post)}
                     className="text-brand-600 font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all"
                   >

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Facebook, Twitter, Instagram, Linkedin, Phone, Mail, MapPin, ChevronRight, Star, Loader2, CheckCircle, AlertCircle, Send } from 'lucide-react';
+import { Menu, X, Facebook, Twitter, Instagram, Linkedin, Phone, Mail, MapPin, ChevronRight, Star, Loader2, CheckCircle, AlertCircle, Send, ExternalLink } from 'lucide-react';
 import { COMPANY_INFO } from '../constants';
 import ChatWidget from './ChatWidget';
 import { Logo } from './Logo';
@@ -93,31 +93,23 @@ const NewsletterForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!email) {
       setStatus('error');
       setMessage('Email address is required.');
       return;
     }
-
     if (!validateEmail(email)) {
       setStatus('error');
       setMessage('Please enter a valid email address.');
       return;
     }
-
     setStatus('loading');
     setMessage('');
-
     try {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
-
       setStatus('success');
       setMessage('Thank you for subscribing!');
       setEmail('');
-
-      // Auto-reset form after 5 seconds to allow another subscription if needed
       setTimeout(() => {
         setStatus('idle');
         setMessage('');
@@ -136,7 +128,7 @@ const NewsletterForm: React.FC = () => {
           <span className="font-bold">Subscribed!</span>
         </div>
         <p className="text-slate-400 text-sm pl-8">
-          You've been added to our newsletter list.
+          You've been added to our list.
         </p>
       </div>
     );
@@ -153,13 +145,13 @@ const NewsletterForm: React.FC = () => {
             if (status === 'error') setStatus('idle');
           }}
           disabled={status === 'loading'}
-          placeholder="Your email address"
-          className={`w-full bg-slate-800 border ${status === 'error' ? 'border-red-500 focus:border-red-500' : 'border-slate-700 focus:border-brand-500'
-            } rounded px-4 py-2 pr-10 text-white focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+          placeholder="Enter your email"
+          className={`w-full bg-white/5 border ${status === 'error' ? 'border-red-500 focus:border-red-500' : 'border-white/10 focus:border-brand-500'
+            } rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-all text-sm`}
           aria-label="Email Address for Newsletter"
         />
         {status === 'loading' && (
-          <div className="absolute right-3 top-2.5">
+          <div className="absolute right-3 top-3">
             <Loader2 className="animate-spin text-slate-400" size={18} />
           </div>
         )}
@@ -175,7 +167,7 @@ const NewsletterForm: React.FC = () => {
       <button
         type="submit"
         disabled={status === 'loading'}
-        className="w-full bg-brand-600 hover:bg-brand-500 disabled:bg-slate-700 disabled:text-slate-400 text-white font-medium py-2 rounded transition flex items-center justify-center gap-2"
+        className="w-full bg-brand-600 hover:bg-brand-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-all flex items-center justify-center gap-2 text-sm shadow-lg shadow-brand-900/20"
       >
         {status === 'loading' ? 'Subscribing...' : 'Subscribe'}
         {!status && <Send size={16} />}
@@ -185,81 +177,156 @@ const NewsletterForm: React.FC = () => {
 };
 
 const Footer: React.FC = () => {
+  // Navigation links for schema and rendering
+  const keyLinks = [
+    { name: 'About Us', path: '/about' },
+    { name: 'Our Properties', path: '/properties' },
+    { name: 'Services', path: '/services' },
+    { name: 'Portfolio', path: '/portfolio' },
+    { name: 'News & Insights', path: '/news' },
+    { name: 'Contact Us', path: '/contact' },
+  ];
+
+  const legalLinks = [
+    { name: 'Privacy Policy', path: '/privacy' },
+    { name: 'Terms of Service', path: '/terms' },
+  ];
+
+  const socialLinks = [
+    { icon: Facebook, href: COMPANY_INFO.facebook, label: 'Facebook' },
+    { icon: Twitter, href: COMPANY_INFO.twitter, label: 'Twitter' },
+    { icon: Instagram, href: COMPANY_INFO.instagram, label: 'Instagram' },
+    { icon: Linkedin, href: COMPANY_INFO.linkedin, label: 'LinkedIn' },
+  ];
+
+  // Generate schema for navigation
+  const navigationSchema = {
+    "@context": "https://schema.org",
+    "@type": "SiteNavigationElement",
+    "name": "Footer Navigation",
+    "url": "https://provisionlands.co.ke",
+    "hasPart": keyLinks.map(link => ({
+      "@type": "SiteNavigationElement",
+      "name": link.name,
+      "url": `https://provisionlands.co.ke${link.path}`
+    }))
+  };
+
   return (
-    <footer className="bg-slate-900 text-white pt-16 pb-8">
+    <footer className="bg-[#0B1120] text-white pt-20 pb-10 border-t border-slate-900">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(navigationSchema) }}
+      />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
-          {/* Brand */}
-          <div>
-            <div className="mb-6 bg-white p-4 rounded-lg inline-block w-full max-w-[250px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8 mb-16">
+
+          {/* Brand Column (Col 1-4) */}
+          <div className="lg:col-span-4">
+            <div className="mb-6">
               <Logo variant="full" className="h-16" />
             </div>
-            <p className="text-slate-400 mb-6 leading-relaxed">
-              {COMPANY_INFO.slogan}. We deliver prime value land and properties with integrity and speed.
+            <p className="text-slate-400 mb-8 leading-relaxed max-w-sm">
+              We promise and deliver genuinely. Your trusted partner in acquiring prime, value-added land with ready title deeds in Kenya.
             </p>
-            <div className="flex items-center gap-1 text-yellow-500 mb-6">
-              <Star className="fill-current" size={16} />
-              <Star className="fill-current" size={16} />
-              <Star className="fill-current" size={16} />
-              <Star className="fill-current" size={16} />
-              <Star className="fill-current" size={16} />
-              <span className="text-slate-400 text-sm ml-2">(300+ Reviews)</span>
-            </div>
-            <div className="flex space-x-4">
-              <a href={COMPANY_INFO.facebook} target="_blank" rel="noopener noreferrer" aria-label="Visit our Facebook page" className="text-slate-300 hover:text-white transition min-w-[44px] min-h-[44px] flex items-center justify-center"><Facebook size={20} /></a>
-              <a href={COMPANY_INFO.twitter} aria-label="Visit our Twitter profile" className="text-slate-300 hover:text-white transition min-w-[44px] min-h-[44px] flex items-center justify-center"><Twitter size={20} /></a>
-              <a href={COMPANY_INFO.instagram} target="_blank" rel="noopener noreferrer" aria-label="Visit our Instagram profile" className="text-slate-300 hover:text-white transition min-w-[44px] min-h-[44px] flex items-center justify-center"><Instagram size={20} /></a>
-              <a href={COMPANY_INFO.linkedin} aria-label="Visit our LinkedIn page" className="text-slate-300 hover:text-white transition min-w-[44px] min-h-[44px] flex items-center justify-center"><Linkedin size={20} /></a>
+            <div className="flex gap-3">
+              {socialLinks.map((social) => (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={social.label}
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-800 text-slate-400 hover:bg-brand-600 hover:text-white transition-all duration-300 hover:-translate-y-1"
+                >
+                  <social.icon size={18} />
+                </a>
+              ))}
             </div>
           </div>
 
-          {/* Quick Links */}
-          <div>
-            <h3 className="text-lg font-bold mb-6 border-b border-slate-700 pb-2 inline-block">Quick Links</h3>
+          {/* Quick Links (Col 5-7) */}
+          <div className="lg:col-span-3 lg:pl-8">
+            <h3 className="text-lg font-serif font-bold text-white mb-6">Quick Links</h3>
             <ul className="space-y-3">
-              <li><Link to="/about" className="text-slate-300 hover:text-accent-500 flex items-center gap-2 transition"><ChevronRight size={14} /> About Us</Link></li>
-              <li><Link to="/properties" className="text-slate-300 hover:text-accent-500 flex items-center gap-2 transition"><ChevronRight size={14} /> Listings</Link></li>
-              <li><Link to="/services" className="text-slate-300 hover:text-accent-500 flex items-center gap-2 transition"><ChevronRight size={14} /> Our Services</Link></li>
-              <li><Link to="/portfolio" className="text-slate-300 hover:text-accent-500 flex items-center gap-2 transition"><ChevronRight size={14} /> Success Stories</Link></li>
-              <li><Link to="/contact" className="text-slate-300 hover:text-accent-500 flex items-center gap-2 transition"><ChevronRight size={14} /> Contact</Link></li>
+              {keyLinks.map((link) => (
+                <li key={link.path}>
+                  <Link
+                    to={link.path}
+                    className="text-slate-400 hover:text-brand-400 transition-colors flex items-center gap-2 group"
+                  >
+                    <ChevronRight size={14} className="text-brand-600 opacity-0 group-hover:opacity-100 transition-all -ml-5 group-hover:ml-0" />
+                    <span className="group-hover:translate-x-1 transition-transform">{link.name}</span>
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Contact Info */}
-          <div>
-            <h3 className="text-lg font-bold mb-6 border-b border-slate-700 pb-2 inline-block">Contact Us</h3>
-            <ul className="space-y-4">
-              <li className="flex items-start gap-3 text-slate-300">
-                <MapPin className="text-accent-500 mt-1 shrink-0" size={18} />
-                <span className="text-sm">{COMPANY_INFO.address}</span>
+          {/* Contact Info (Col 8-10) */}
+          <div className="lg:col-span-3">
+            <h3 className="text-lg font-serif font-bold text-white mb-6">Contact Us</h3>
+            <ul className="space-y-5">
+              <li className="flex items-start gap-4 group">
+                <div className="bg-slate-800 p-2.5 rounded-lg text-brand-500 group-hover:bg-brand-600 group-hover:text-white transition-colors">
+                  <MapPin size={18} />
+                </div>
+                <div>
+                  <h4 className="text-white text-sm font-semibold mb-1">Visit Us</h4>
+                  <p className="text-slate-400 text-sm leading-relaxed">{COMPANY_INFO.address}</p>
+                </div>
               </li>
-              <li className="flex items-center gap-3 text-slate-300">
-                <Phone className="text-accent-500 shrink-0" size={18} />
-                <span>{COMPANY_INFO.phone}</span>
+              <li className="flex items-start gap-4 group">
+                <div className="bg-slate-800 p-2.5 rounded-lg text-brand-500 group-hover:bg-brand-600 group-hover:text-white transition-colors">
+                  <Phone size={18} />
+                </div>
+                <div>
+                  <h4 className="text-white text-sm font-semibold mb-1">Call Us</h4>
+                  <a href={`tel:${COMPANY_INFO.phone.replace(/\s/g, '')}`} className="text-slate-400 text-sm hover:text-white transition-colors block">
+                    {COMPANY_INFO.phone}
+                  </a>
+                </div>
               </li>
-              <li className="flex items-start gap-3 text-slate-300">
-                <Mail className="text-accent-500 shrink-0 mt-1" size={18} />
-                <div className="flex flex-col text-sm">
-                  <span>{COMPANY_INFO.email}</span>
-                  <span>{COMPANY_INFO.secondaryEmail}</span>
+              <li className="flex items-start gap-4 group">
+                <div className="bg-slate-800 p-2.5 rounded-lg text-brand-500 group-hover:bg-brand-600 group-hover:text-white transition-colors">
+                  <Mail size={18} />
+                </div>
+                <div>
+                  <h4 className="text-white text-sm font-semibold mb-1">Email Us</h4>
+                  <a href={`mailto:${COMPANY_INFO.email}`} className="text-slate-400 text-sm hover:text-white transition-colors block">
+                    {COMPANY_INFO.email}
+                  </a>
                 </div>
               </li>
             </ul>
           </div>
 
-          {/* Newsletter */}
-          <div>
-            <h3 className="text-lg font-bold mb-6 border-b border-slate-700 pb-2 inline-block">Newsletter</h3>
-            <p className="text-slate-400 mb-4 text-sm">Subscribe to get the latest property alerts and market news.</p>
+          {/* Newsletter (Col 11-12) */}
+          <div className="lg:col-span-2">
+            <h3 className="text-lg font-serif font-bold text-white mb-6">Newsletter</h3>
+            <p className="text-slate-400 text-sm mb-4">
+              Subscribe to get the latest property news and market updates.
+            </p>
             <NewsletterForm />
           </div>
         </div>
 
-        <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center text-slate-500 text-sm">
-          <p>&copy; {new Date().getFullYear()} Provision Land & Properties Ltd. All Rights Reserved.</p>
-          <div className="flex space-x-6 mt-4 md:mt-0">
-            <Link to="/privacy" className="hover:text-white">Privacy Policy</Link>
-            <Link to="/terms" className="hover:text-white">Terms of Service</Link>
+        {/* Bottom Bar */}
+        <div className="pt-8 border-t border-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
+          <p className="text-slate-500 text-center md:text-left">
+            &copy; {new Date().getFullYear()} <span className="text-slate-300">Provision Land & Properties Ltd</span>. All rights reserved.
+          </p>
+          <div className="flex items-center gap-6">
+            {legalLinks.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className="text-slate-500 hover:text-brand-400 transition-colors"
+              >
+                {link.name}
+              </Link>
+            ))}
           </div>
         </div>
       </div>

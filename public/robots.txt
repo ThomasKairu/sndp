@@ -1,4 +1,83 @@
+# Provision Land & Properties Ltd - Robots.txt
+# Website: https://provisionlands.co.ke
+# Last Updated: 2026-01-22
+
+# ===========================================
+#  GENERAL WEB CRAWLERS
+# ===========================================
 User-agent: *
 Allow: /
+Crawl-delay: 1
 
+# ===========================================
+#  AI CRAWLERS - EXPLICITLY ALLOWED
+# ===========================================
+
+# OpenAI / ChatGPT Crawler
+User-agent: GPTBot
+Allow: /
+
+# OpenAI ChatGPT User Agent
+User-agent: ChatGPT-User
+Allow: /
+
+# Anthropic / Claude Crawler
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+# Google AI / Gemini Crawler
+User-agent: Google-Extended
+Allow: /
+
+# Perplexity AI
+User-agent: PerplexityBot
+Allow: /
+
+# Cohere AI
+User-agent: cohere-ai
+Allow: /
+
+# Meta AI
+User-agent: Meta-ExternalAgent
+Allow: /
+
+# Common Crawl (used for AI training)
+User-agent: CCBot
+Allow: /
+
+# ===========================================
+#  SEARCH ENGINE CRAWLERS
+# ===========================================
+
+# Google
+User-agent: Googlebot
+Allow: /
+
+# Bing
+User-agent: Bingbot
+Allow: /
+
+# Yahoo
+User-agent: Slurp
+Allow: /
+
+# DuckDuckGo
+User-agent: DuckDuckBot
+Allow: /
+
+# ===========================================
+#  DISALLOWED PATHS
+# ===========================================
+# (None - all public content is accessible)
+
+# ===========================================
+#  IMPORTANT RESOURCES FOR AI SYSTEMS
+# ===========================================
 Sitemap: https://provisionlands.co.ke/sitemap.xml
+
+# AI-Optimized Content Summary (LLMs.txt Standard)
+# For AI models seeking structured information:
+# https://provisionlands.co.ke/llms.txt
