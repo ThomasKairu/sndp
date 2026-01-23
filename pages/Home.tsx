@@ -59,7 +59,7 @@ export const Home: React.FC = () => {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
-    }, 4000); // Change slide every 4 seconds
+    }, 3000); // Change slide every 3 seconds
     return () => clearInterval(timer);
   }, []);
 
