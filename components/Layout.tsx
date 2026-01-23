@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Facebook, Twitter, Instagram, Linkedin, Phone, Mail, MapPin, ChevronRight, Star, Loader2, CheckCircle, AlertCircle, Send, ExternalLink } from 'lucide-react';
+import { Menu, X, Facebook, Twitter, Instagram, Linkedin, Phone, Mail, MapPin, ChevronRight, Star, Loader2, CheckCircle, AlertCircle, Send, ExternalLink, Clock } from 'lucide-react';
 import { COMPANY_INFO } from '../constants';
 import ChatWidget from './ChatWidget';
 import { Logo } from './Logo';
@@ -10,75 +10,150 @@ const Navbar: React.FC = () => {
   const location = useLocation();
 
   const navLinks = [
-    { name: 'Home', path: '/' },
-    { name: 'About Us', path: '/about' },
-    { name: 'Properties', path: '/properties' },
-    { name: 'Portfolio', path: '/portfolio' },
-    { name: 'News', path: '/news' },
-    { name: 'Contact', path: '/contact' },
+    { name: 'HOME', path: '/' },
+    { name: 'PROPERTIES', path: '/properties' },
+    { name: 'SERVICES', path: '/services' },
+    { name: 'ABOUT US', path: '/about' },
+    { name: 'MEDIA', path: '/news' },
+    { name: 'CONTACT US', path: '/contact' },
+  ];
+
+  const socialLinks = [
+    { icon: Facebook, href: COMPANY_INFO.facebook, label: 'Facebook' },
+    { icon: Instagram, href: COMPANY_INFO.instagram, label: 'Instagram' },
+    { icon: Linkedin, href: COMPANY_INFO.linkedin, label: 'LinkedIn' },
   ];
 
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <nav className="sticky top-0 z-40 bg-white shadow-md border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-24">
-          <div className="flex items-center flex-shrink-0">
-            <Link to="/" className="flex items-center">
-              <Logo className="h-12 md:h-14 lg:h-16" variant="horizontal" />
-            </Link>
-          </div>
+    <div className="sticky top-0 z-50 w-full bg-white flex flex-col shadow-md transition-all duration-300">
+      {/* --- TOP HEADER (Logo + Contacts) --- */}
+      <div className="border-b border-gray-100 bg-white py-2 lg:py-4 hidden lg:block">
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 flex justify-between items-center">
+          {/* Logo Section */}
+          <Link to="/" className="flex items-center flex-shrink-0">
+            {/* Using the logo component but ensuring it fits the new layout */}
+            <Logo className="h-12 lg:h-16" variant="horizontal" />
+          </Link>
 
-          {/* Desktop Menu - Optimized for Tablet (md) and Desktop (lg) */}
-          <div className="hidden md:flex items-center md:space-x-3 lg:space-x-8 flex-nowrap overflow-x-auto no-scrollbar">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`text-sm font-medium transition-colors duration-200 whitespace-nowrap ${isActive(link.path) ? 'text-brand-600 font-bold border-b-2 border-brand-500' : 'text-gray-600 hover:text-brand-600'
-                  }`}
-              >
-                {link.name}
-              </Link>
-            ))}
+          {/* Contact Info Section (Right aligned) */}
+          <div className="flex items-center gap-6">
+            {/* Email */}
+            <div className="flex items-center gap-3">
+              <div className="bg-gray-100 p-2 rounded flex items-center justify-center">
+                <Mail size={16} className="text-gray-600" />
+              </div>
+              <a href={`mailto:${COMPANY_INFO.email}`} className="text-[#0ea5e9] font-medium text-sm hover:underline">
+                {COMPANY_INFO.email}
+              </a>
+            </div>
 
-          </div>
+            {/* WhatsApp */}
+            <div className="flex items-center gap-3">
+              <div className="bg-gray-100 p-2 rounded flex items-center justify-center">
+                {/* Whatsapp icon usually represented by Phone or explicit SVG. Using MessageCircle/Phone for now as lucide doesn't have Whatsapp brand icon built-in without extension, 
+                      but user asked to duplicate design. Assuming standard icons. */}
+                <Phone size={16} className="text-gray-600" />
+              </div>
+              <span className="text-[#0ea5e9] font-medium text-sm">+254 797 331 355</span>
+            </div>
 
-          {/* Mobile button */}
-          <div className="md:hidden flex items-center">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
-              aria-expanded={isOpen}
-              className="text-gray-600 hover:text-brand-900 focus:outline-none min-w-[48px] min-h-[48px] flex items-center justify-center"
-            >
-              {isOpen ? <X size={28} /> : <Menu size={28} />}
-            </button>
+            {/* Sales Line */}
+            <div className="flex items-center gap-3">
+              <div className="bg-gray-100 p-2 rounded flex items-center justify-center">
+                <Phone size={16} className="text-gray-600" />
+              </div>
+              <span className="text-[#0ea5e9] font-medium text-sm">+254 727 774 279</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      {isOpen && (
-        <div className="md:hidden bg-white border-t border-gray-100 animate-fade-in-up">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                onClick={() => setIsOpen(false)}
-                className={`block px-3 py-2 rounded-md text-base font-medium ${isActive(link.path) ? 'bg-brand-50 text-brand-700' : 'text-gray-700 hover:bg-gray-50 hover:text-brand-600'
-                  }`}
-              >
-                {link.name}
-              </Link>
-            ))}
+      {/* --- NAVIGATION BAR (Links + Socials) --- */}
+      <nav className="bg-white z-50 border-t border-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
+          <div className="flex justify-between items-center h-16 lg:h-20">
 
+            {/* Mobile Logo (Visible only on mobile/tablet when Top Header is hidden) */}
+            <div className="lg:hidden flex items-center">
+              <Link to="/">
+                <Logo className="h-10" variant="horizontal" />
+              </Link>
+            </div>
+
+            {/* Desktop Navigation Links (Left/Center aligned) */}
+            <div className="hidden lg:flex items-center space-x-8">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  className={`text-sm font-bold tracking-wide py-2 border-b-2 transition-all duration-200 ${isActive(link.path)
+                    ? 'text-slate-900 border-[#0ea5e9]'
+                    : 'text-slate-700 border-transparent hover:text-[#0ea5e9]'
+                    }`}
+                >
+                  {link.name}
+                </Link>
+              ))}
+            </div>
+
+            {/* Social Icons (Right aligned, desktop only) */}
+            <div className="hidden lg:flex items-center gap-4 border-l border-gray-200 pl-6 ml-6 h-8">
+              {socialLinks.map((social) => (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-slate-800 hover:text-[#0ea5e9] transition-colors"
+                >
+                  <social.icon size={18} />
+                </a>
+              ))}
+              {/* TikTok placeholder if needed, using custom text or icon */}
+              {/* <span className="text-xs font-bold text-red-500">TikTok</span> */}
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="lg:hidden flex items-center">
+              <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="text-gray-600 hover:text-brand-900 p-2"
+              >
+                {isOpen ? <X size={28} /> : <Menu size={28} />}
+              </button>
+            </div>
           </div>
         </div>
-      )}
-    </nav>
+
+        {/* Mobile Menu Dropdown */}
+        {isOpen && (
+          <div className="lg:hidden bg-white border-t border-gray-100 animate-fade-in-up">
+            <div className="px-4 py-4 space-y-2">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={() => setIsOpen(false)}
+                  className={`block px-4 py-3 rounded-lg text-sm font-bold ${isActive(link.path) ? 'bg-brand-50 text-brand-700' : 'text-slate-700 hover:bg-gray-50'
+                    }`}
+                >
+                  {link.name}
+                </Link>
+              ))}
+              <div className="pt-4 mt-4 border-t border-gray-100 flex gap-4">
+                {socialLinks.map((social) => (
+                  <a key={social.label} href={social.href} className="text-slate-600 hover:text-[#0ea5e9]">
+                    <social.icon size={20} />
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </nav>
+    </div>
   );
 };
 
@@ -297,6 +372,17 @@ const Footer: React.FC = () => {
                   <a href={`mailto:${COMPANY_INFO.email}`} className="text-slate-400 text-sm hover:text-white transition-colors block">
                     {COMPANY_INFO.email}
                   </a>
+                </div>
+              </li>
+              <li className="flex items-start gap-4 group">
+                <div className="bg-slate-800 p-2.5 rounded-lg text-brand-500 group-hover:bg-brand-600 group-hover:text-white transition-colors">
+                  <Clock size={18} />
+                </div>
+                <div>
+                  <h4 className="text-white text-sm font-semibold mb-1">Hours</h4>
+                  <p className="text-slate-400 text-xs">Mon-Fri: 7am-6pm</p>
+                  <p className="text-slate-400 text-xs">Sat: 8am-5pm</p>
+                  <p className="text-slate-400 text-xs">Sun: On call</p>
                 </div>
               </li>
             </ul>

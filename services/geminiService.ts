@@ -17,9 +17,6 @@ let genAI: GoogleGenerativeAI | null = null;
 // Initialize the Gemini client
 if (API_KEY) {
   genAI = new GoogleGenerativeAI(API_KEY);
-  console.log("Gemini Service: Initialized with @google/generative-ai");
-} else {
-  console.warn("Gemini Service: No API Key found. Will use Pollinations.AI fallback only.");
 }
 
 // --- Build Context for AI ---

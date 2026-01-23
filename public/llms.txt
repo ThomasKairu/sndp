@@ -33,7 +33,7 @@
 | Sagana Makutano Plots | Sagana Makutano | 50x100 ft | 650,000 |
 | Ithanga Murang'a Plots | Ithanga, Murang'a | 50x100 ft | 700,000 |
 | Kilimambogo / Oldonyo Sabuk | Kilimambogo | 50x100 ft | 600,000 |
-| Tola Ngoingwa | Tola, Thika | 50x100 ft | 2,300,000 |
+| Tola Ngoingwa | Tola, Thika | 40x80 ft | 2,300,000 |
 | Muguga / Gatuanyaga | Gatuanyaga, Thika | 50x100 ft | 1,800,000 |
 | Makuyu Mananja Acre | Makuyu Mananja | 1 Acre | 2,500,000 |
 | Matuu Plots | Matuu | 50x100 ft | 280,000 |
@@ -76,4 +76,4 @@ For property viewings, quotes, or general inquiries:
 - 🏢 Visit: Clairbourn Towers, 5th Floor, Thika, Kenya
 
 ---
-*Last Updated: 2026-01-22*
+*Last Updated: 2026-01-23*

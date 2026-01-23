@@ -85,9 +85,20 @@ export const ContactPage: React.FC = () => {
                 "openingHoursSpecification": [
                   {
                     "@type": "OpeningHoursSpecification",
-                    "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-                    "opens": "00:00",
-                    "closes": "23:59"
+                    "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+                    "opens": "07:00",
+                    "closes": "18:00"
+                  },
+                  {
+                    "@type": "OpeningHoursSpecification",
+                    "dayOfWeek": "Saturday",
+                    "opens": "08:00",
+                    "closes": "17:00"
+                  },
+                  {
+                    "@type": "OpeningHoursSpecification",
+                    "dayOfWeek": "Sunday",
+                    "description": "On call as per request"
                   }
                 ],
                 "aggregateRating": {
@@ -188,7 +199,9 @@ export const ContactPage: React.FC = () => {
                   <div className="bg-white/10 p-3 rounded-lg group-hover:bg-accent-500 transition duration-300"><Clock size={24} /></div>
                   <div>
                     <h3 className="font-bold text-lg mb-1">Office Hours</h3>
-                    <p className="text-brand-50">Always Open</p>
+                    <p className="text-brand-50">{COMPANY_INFO.businessHours.weekdays}</p>
+                    <p className="text-brand-100 text-sm mt-1">{COMPANY_INFO.businessHours.saturday}</p>
+                    <p className="text-brand-100 text-sm mt-1">{COMPANY_INFO.businessHours.sunday}</p>
                   </div>
                 </div>
               </div>
@@ -372,15 +385,16 @@ export const ContactPage: React.FC = () => {
               </div>
               <h3 className="font-bold text-slate-800 mb-2">Call Us</h3>
               <p className="text-slate-600 text-sm">{COMPANY_INFO.phone}</p>
-              <p className="text-slate-500 text-xs mt-1">Available 24/7</p>
+              <p className="text-slate-500 text-xs mt-1">Sales: 0727 774 279</p>
             </div>
             <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow border border-gray-100">
               <div className="bg-green-100 text-green-600 w-12 h-12 rounded-full flex items-center justify-center mb-4">
                 <Clock size={24} />
               </div>
               <h3 className="font-bold text-slate-800 mb-2">Working Hours</h3>
-              <p className="text-slate-600 text-sm">Always Open</p>
-              <p className="text-slate-500 text-xs mt-1">Free site visits daily</p>
+              <p className="text-slate-600 text-sm">Mon-Fri: 7 a.m. - 6 p.m.</p>
+              <p className="text-slate-600 text-sm">Sat: 8 a.m. - 5 p.m.</p>
+              <p className="text-slate-500 text-xs mt-1">Sun: On call</p>
             </div>
           </div>
         </div>

@@ -14,7 +14,12 @@ export const COMPANY_INFO = {
   // Google Maps location
   googleMapsUrl: "https://www.google.com/maps/place/Provision+Land+%26+Properties+Ltd/@-1.035323,37.074561,17z/data=!3m1!4b1!4m6!3m5!1s0x182f4f0058accd97:0x2760e84f8974afbe!8m2!3d-1.035323!4d37.074561!16s%2Fg%2F11vylj2svd",
   googleMapsEmbed: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.166837891!2d37.074561!3d-1.035323!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f4f0058accd97%3A0x2760e84f8974afbe!2sProvision%20Land%20%26%20Properties%20Ltd!5e0!3m2!1sen!2ske!4v1",
-  coordinates: { lat: -1.035323, lng: 37.074561 }
+  coordinates: { lat: -1.035323, lng: 37.074561 },
+  businessHours: {
+    weekdays: "Monday-Friday: 7 a.m. to 6 p.m.",
+    saturday: "Saturday: 8 a.m. to 5 p.m.",
+    sunday: "Sunday: On call as per request"
+  }
 };
 
 export const SERVICES: Service[] = [
@@ -117,7 +122,7 @@ export const PROPERTIES: Property[] = [
     price: 2300000,
     location: 'Tola, Thika',
     type: 'Residential',
-    size: '50x100 ft',
+    size: '40x80 ft',
     description: 'Premium residential plots in Tola Ngoingwa estate. High-end neighborhood.',
     image: '/Tola Ngoingwa.webp',
     images: ['/Tola Ngoingwa.webp'],

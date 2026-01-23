@@ -1,6 +1,6 @@
 # Provision Land & Properties Ltd - Robots.txt
 # Website: https://provisionlands.co.ke
-# Last Updated: 2026-01-22
+# Last Updated: 2026-01-23
 
 # ===========================================
 #  GENERAL WEB CRAWLERS

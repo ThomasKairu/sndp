@@ -1,19 +1,80 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { SERVICES } from '../constants';
 
 export const ServicesPage: React.FC = () => (
     <div className="bg-gray-50 min-h-screen">
+        <Helmet>
+            <title>Our Services - Provision Land Limited | Real Estate Experts</title>
+            <meta name="description" content="Explore our comprehensive real estate services including Land Sales, Property Valuation, Real Estate Management, and Consultancy. We promise and deliver genuinely." />
+            <link rel="canonical" href="https://provisionlands.co.ke/services" />
+            <script type="application/ld+json">{`
+              {
+                "@context": "https://schema.org",
+                "@type": "Service",
+                "serviceType": "Real Estate Services",
+                "provider": {
+                  "@type": "RealEstateAgent",
+                  "name": "Provision Land & Properties Ltd",
+                  "url": "https://provisionlands.co.ke"
+                },
+                "areaServed": {
+                  "@type": "Country",
+                  "name": "Kenya"
+                },
+                "hasOfferCatalog": {
+                  "@type": "OfferCatalog",
+                  "name": "Real Estate Services Catalog",
+                  "itemListElement": [
+                    {
+                      "@type": "Offer",
+                      "itemOffered": {
+                        "@type": "Service",
+                        "name": "Land Sales",
+                        "description": "Prime plots in high-growth areas like Thika, Murang’a, and Machakos with ready title deeds."
+                      }
+                    },
+                    {
+                      "@type": "Offer",
+                      "itemOffered": {
+                        "@type": "Service",
+                        "name": "Property Valuation",
+                        "description": "Accurate and professional land and building valuation services."
+                      }
+                    },
+                    {
+                      "@type": "Offer",
+                      "itemOffered": {
+                        "@type": "Service",
+                        "name": "Real Estate Management",
+                        "description": "Comprehensive property management solutions to maximize your returns."
+                      }
+                    },
+                    {
+                      "@type": "Offer",
+                      "itemOffered": {
+                        "@type": "Service",
+                        "name": "Consultancy",
+                        "description": "Expert advice on land banking, agribusiness, and residential development."
+                      }
+                    }
+                  ]
+                }
+              }
+            `}</script>
+        </Helmet>
+
         <div className="relative bg-brand-900 text-white py-20 text-center">
-             <div className="absolute inset-0">
-              <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1600&q=80" className="w-full h-full object-cover opacity-20" alt="Background" />
-              <div className="absolute inset-0 bg-gradient-to-t from-gray-50 via-transparent to-transparent"></div>
+            <div className="absolute inset-0">
+                <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1600&q=80" className="w-full h-full object-cover opacity-20" alt="Background" />
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-50 via-transparent to-transparent"></div>
             </div>
             <h1 className="relative z-10 text-4xl font-serif font-bold mb-2">Real Estate Solutions</h1>
             <p className="relative z-10 text-brand-200">Comprehensive services designed to maximize value.</p>
         </div>
         <div className="container mx-auto px-4 py-16">
             <p className="text-center text-gray-600 max-w-2xl mx-auto mb-16">We leverage our deep market knowledge and extensive network to deliver results that exceed expectations for land owners and home buyers.</p>
-            
+
             <div className="grid grid-cols-1 gap-12 max-w-5xl mx-auto">
                 {SERVICES.map((service, idx) => (
                     <div key={service.id} className={`flex flex-col md:flex-row items-center gap-8 ${idx % 2 === 1 ? 'md:flex-row-reverse' : ''}`}>

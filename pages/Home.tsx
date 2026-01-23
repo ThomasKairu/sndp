@@ -50,11 +50,10 @@ const HERO_SLIDES = [
   }
 ];
 
-const featuredProperties = PROPERTIES.slice(0, 3);
+const featuredProperties = PROPERTIES.slice(0, 8);
 
 export const Home: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
-
 
   // Auto-advance slides
   useEffect(() => {
@@ -72,7 +71,158 @@ export const Home: React.FC = () => {
     setCurrentSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
   };
 
-
+  // Dynamic Schema Generation
+  const schema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://provisionlands.co.ke/#organization",
+        "name": "Provision Land & Properties Ltd",
+        "alternateName": "Provision Lands",
+        "url": "https://provisionlands.co.ke",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://provisionlands.co.ke/web-app-manifest-512x512.png",
+          "width": 512,
+          "height": 512
+        },
+        "description": "Genuine land for sale in Kenya with ready title deeds. Affordable plots in Thika, Murang'a, Sagana, and Machakos.",
+        "telephone": "+254797331355",
+        "email": "info@provisionlands.co.ke",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Clairbourn Towers, 5th Floor",
+          "addressLocality": "Thika",
+          "addressRegion": "Kiambu County",
+          "addressCountry": "KE"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": -1.035323,
+          "longitude": 37.074561
+        },
+        "sameAs": [
+          "https://web.facebook.com/p/Provision-Land-Properties-Ltd-61551485047029/",
+          "https://www.instagram.com/provision_land_properties_ltd/"
+        ]
+      },
+      {
+        "@type": "RealEstateAgent",
+        "@id": "https://provisionlands.co.ke/#business",
+        "name": "Provision Land & Properties Ltd",
+        "url": "https://provisionlands.co.ke",
+        "telephone": "+254797331355",
+        "email": "info@provisionlands.co.ke",
+        "slogan": "We Promise and Deliver Genuinely",
+        "priceRange": "KES 200,000 - KES 7,500,000",
+        "paymentAccepted": "Cash, Bank Transfer, Mpesa",
+        "currenciesAccepted": "KES",
+        "areaServed": [
+          { "@type": "City", "name": "Thika" },
+          { "@type": "City", "name": "Murang'a" },
+          { "@type": "City", "name": "Machakos" },
+          { "@type": "AdministrativeArea", "name": "Kiambu County" },
+          { "@type": "AdministrativeArea", "name": "Murang'a County" },
+          { "@type": "AdministrativeArea", "name": "Machakos County" }
+        ],
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Clairbourn Towers, 5th Floor",
+          "addressLocality": "Thika",
+          "addressRegion": "Kiambu County",
+          "postalCode": "01000",
+          "addressCountry": "KE"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": -1.035323,
+          "longitude": 37.074561
+        },
+        "openingHoursSpecification": [
+          {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+            "opens": "08:00",
+            "closes": "17:00"
+          },
+          {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": "Saturday",
+            "opens": "09:00",
+            "closes": "14:00"
+          }
+        ],
+        "hasOfferCatalog": {
+          "@type": "OfferCatalog",
+          "name": "Land & Property Listings",
+          "itemListElement": [
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Land Sales" } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Property Valuation" } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Real Estate Management" } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Consultancy" } }
+          ]
+        }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://provisionlands.co.ke/#website",
+        "url": "https://provisionlands.co.ke",
+        "name": "Provision Land & Properties Ltd",
+        "description": "Find genuine land for sale in Kenya with ready title deeds",
+        "publisher": { "@id": "https://provisionlands.co.ke/#organization" },
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://provisionlands.co.ke/properties?search={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://provisionlands.co.ke/#webpage",
+        "url": "https://provisionlands.co.ke/",
+        "name": "Home - Provision Land Limited | Land for Sale in Kenya",
+        "description": "Find your dream plot with Provision Land Limited. Genuine, affordable land in Thika, Makutano, Sagana, and Machakos with ready title deeds.",
+        "isPartOf": { "@id": "https://provisionlands.co.ke/#website" },
+        "about": { "@id": "https://provisionlands.co.ke/#organization" },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://provisionlands.co.ke/carousel1.webp"
+        }
+      },
+      {
+        "@type": "ItemList",
+        "name": "Featured Properties",
+        "description": "Handpicked prime plots from Thika, Murang'a, and Machakos",
+        "numberOfItems": featuredProperties.length,
+        "itemListElement": featuredProperties.map((prop, index) => ({
+          "@type": "ListItem",
+          "position": index + 1,
+          "item": {
+            "@type": "RealEstateListing",
+            "name": prop.title,
+            "url": "https://provisionlands.co.ke/properties",
+            "description": prop.description,
+            "image": `https://provisionlands.co.ke${prop.image}`,
+            "offers": {
+              "@type": "Offer",
+              "price": prop.price,
+              "priceCurrency": "KES",
+              "availability": "https://schema.org/InStock"
+            },
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": prop.location,
+              "addressCountry": "KE"
+            }
+          }
+        }))
+      }
+    ]
+  };
 
   return (
     <div className="flex flex-col">
@@ -83,209 +233,13 @@ export const Home: React.FC = () => {
         <link rel="preload" as="image" href="/carousel1.webp" fetchpriority="high" />
 
         {/* Schema.org JSON-LD for AI and Search Engines */}
-        <script type="application/ld+json">{`
-          {
-            "@context": "https://schema.org",
-            "@graph": [
-              {
-                "@type": "Organization",
-                "@id": "https://provisionlands.co.ke/#organization",
-                "name": "Provision Land & Properties Ltd",
-                "alternateName": "Provision Lands",
-                "url": "https://provisionlands.co.ke",
-                "logo": {
-                  "@type": "ImageObject",
-                  "url": "https://provisionlands.co.ke/web-app-manifest-512x512.png",
-                  "width": 512,
-                  "height": 512
-                },
-                "description": "Genuine land for sale in Kenya with ready title deeds. Affordable plots in Thika, Murang'a, Sagana, and Machakos.",
-                "telephone": "+254797331355",
-                "email": "info@provisionlands.co.ke",
-                "address": {
-                  "@type": "PostalAddress",
-                  "streetAddress": "Clairbourn Towers, 5th Floor",
-                  "addressLocality": "Thika",
-                  "addressRegion": "Kiambu County",
-                  "addressCountry": "KE"
-                },
-                "geo": {
-                  "@type": "GeoCoordinates",
-                  "latitude": -1.035323,
-                  "longitude": 37.074561
-                },
-                "sameAs": [
-                  "https://web.facebook.com/p/Provision-Land-Properties-Ltd-61551485047029/",
-                  "https://www.instagram.com/provision_land_properties_ltd/"
-                ]
-              },
-              {
-                "@type": "RealEstateAgent",
-                "@id": "https://provisionlands.co.ke/#business",
-                "name": "Provision Land & Properties Ltd",
-                "url": "https://provisionlands.co.ke",
-                "telephone": "+254797331355",
-                "email": "info@provisionlands.co.ke",
-                "slogan": "We Promise and Deliver Genuinely",
-                "priceRange": "KES 200,000 - KES 7,500,000",
-                "paymentAccepted": "Cash, Bank Transfer, Mpesa",
-                "currenciesAccepted": "KES",
-                "areaServed": [
-                  {"@type": "City", "name": "Thika"},
-                  {"@type": "City", "name": "Murang'a"},
-                  {"@type": "City", "name": "Machakos"},
-                  {"@type": "AdministrativeArea", "name": "Kiambu County"},
-                  {"@type": "AdministrativeArea", "name": "Murang'a County"},
-                  {"@type": "AdministrativeArea", "name": "Machakos County"}
-                ],
-                "address": {
-                  "@type": "PostalAddress",
-                  "streetAddress": "Clairbourn Towers, 5th Floor",
-                  "addressLocality": "Thika",
-                  "addressRegion": "Kiambu County",
-                  "postalCode": "01000",
-                  "addressCountry": "KE"
-                },
-                "geo": {
-                  "@type": "GeoCoordinates",
-                  "latitude": -1.035323,
-                  "longitude": 37.074561
-                },
-                "openingHoursSpecification": [
-                  {
-                    "@type": "OpeningHoursSpecification",
-                    "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-                    "opens": "08:00",
-                    "closes": "17:00"
-                  },
-                  {
-                    "@type": "OpeningHoursSpecification",
-                    "dayOfWeek": "Saturday",
-                    "opens": "09:00",
-                    "closes": "14:00"
-                  }
-                ],
-                "hasOfferCatalog": {
-                  "@type": "OfferCatalog",
-                  "name": "Land & Property Listings",
-                  "itemListElement": [
-                    {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Land Sales"}},
-                    {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Property Valuation"}},
-                    {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Real Estate Management"}},
-                    {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Consultancy"}}
-                  ]
-                }
-              },
-              {
-                "@type": "WebSite",
-                "@id": "https://provisionlands.co.ke/#website",
-                "url": "https://provisionlands.co.ke",
-                "name": "Provision Land & Properties Ltd",
-                "description": "Find genuine land for sale in Kenya with ready title deeds",
-                "publisher": {"@id": "https://provisionlands.co.ke/#organization"},
-                "potentialAction": {
-                  "@type": "SearchAction",
-                  "target": {
-                    "@type": "EntryPoint",
-                    "urlTemplate": "https://provisionlands.co.ke/properties?search={search_term_string}"
-                  },
-                  "query-input": "required name=search_term_string"
-                }
-              },
-              {
-                "@type": "WebPage",
-                "@id": "https://provisionlands.co.ke/#webpage",
-                "url": "https://provisionlands.co.ke/",
-                "name": "Home - Provision Land Limited | Land for Sale in Kenya",
-                "description": "Find your dream plot with Provision Land Limited. Genuine, affordable land in Thika, Makutano, Sagana, and Machakos with ready title deeds.",
-                "isPartOf": {"@id": "https://provisionlands.co.ke/#website"},
-                "about": {"@id": "https://provisionlands.co.ke/#organization"},
-                "primaryImageOfPage": {
-                  "@type": "ImageObject",
-                  "url": "https://provisionlands.co.ke/carousel1.webp"
-                }
-              },
-              {
-                "@type": "ItemList",
-                "name": "Featured Properties",
-                "description": "Handpicked prime plots from Thika, Murang'a, and Machakos",
-                "numberOfItems": 3,
-                "itemListElement": [
-                  {
-                    "@type": "ListItem",
-                    "position": 1,
-                    "item": {
-                      "@type": "RealEstateListing",
-                      "name": "Prime ½ Acre in Kiharu",
-                      "url": "https://provisionlands.co.ke/properties",
-                      "description": "A prime and spacious parcel ideal for residential development, farming, or future investment.",
-                      "image": "https://provisionlands.co.ke/Prime%20half%20Acre%20in%20Kiharu.webp",
-                      "offers": {
-                        "@type": "Offer",
-                        "price": 1800000,
-                        "priceCurrency": "KES",
-                        "availability": "https://schema.org/InStock"
-                      },
-                      "address": {
-                        "@type": "PostalAddress",
-                        "addressLocality": "Kigetuini Village, Murang'a",
-                        "addressCountry": "KE"
-                      }
-                    }
-                  },
-                  {
-                    "@type": "ListItem",
-                    "position": 2,
-                    "item": {
-                      "@type": "RealEstateListing",
-                      "name": "1 Acre at Mang'u",
-                      "url": "https://provisionlands.co.ke/properties",
-                      "description": "Ideal for building, farming, or residential development. Only 10 minutes drive from Thika town.",
-                      "image": "https://provisionlands.co.ke/1%20Acre%20at%20Mang'u.webp",
-                      "offers": {
-                        "@type": "Offer",
-                        "price": 5000000,
-                        "priceCurrency": "KES",
-                        "availability": "https://schema.org/InStock"
-                      },
-                      "address": {
-                        "@type": "PostalAddress",
-                        "addressLocality": "Mang'u, Thika",
-                        "addressCountry": "KE"
-                      }
-                    }
-                  },
-                  {
-                    "@type": "ListItem",
-                    "position": 3,
-                    "item": {
-                      "@type": "RealEstateListing",
-                      "name": "Sagana Makutano Plots",
-                      "url": "https://provisionlands.co.ke/properties",
-                      "description": "Genuine plots just 10 minutes from Makutano Junction. Near Kamweli Shopping Centre and schools.",
-                      "image": "https://provisionlands.co.ke/Sagana%20Makutano%20Plots.webp",
-                      "offers": {
-                        "@type": "Offer",
-                        "price": 650000,
-                        "priceCurrency": "KES",
-                        "availability": "https://schema.org/InStock"
-                      },
-                      "address": {
-                        "@type": "PostalAddress",
-                        "addressLocality": "Sagana Makutano",
-                        "addressCountry": "KE"
-                      }
-                    }
-                  }
-                ]
-              }
-            ]
-          }
-        `}</script>
+        <script type="application/ld+json">
+          {JSON.stringify(schema)}
+        </script>
       </Helmet>
 
       {/* Infinite Carousel Hero Section */}
-      <section className="relative h-[250px] md:h-[500px] flex items-center overflow-hidden bg-brand-900 group">
+      <section className="relative h-[200px] md:h-[250px] flex items-center overflow-hidden bg-brand-900 group">
 
         {/* Slides */}
         {HERO_SLIDES.map((slide, index) => (
@@ -329,34 +283,6 @@ export const Home: React.FC = () => {
 
       </section>
 
-      {/* Services Overview */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-serif font-bold text-slate-900 mb-4">Our Services</h2>
-            <div className="h-1 w-20 bg-accent-500 mx-auto rounded-full"></div>
-            <p className="mt-4 text-gray-600 max-w-2xl mx-auto">We promise and deliver genuinely across all our service offerings.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {SERVICES.map((service) => (
-              <div key={service.id} className="p-8 rounded-xl bg-gray-50 border border-gray-100 hover:shadow-xl hover:border-brand-200 transition duration-300 group">
-                <div className="w-14 h-14 bg-brand-100 rounded-lg flex items-center justify-center mb-6 group-hover:bg-brand-500 transition duration-300">
-                  <div className="text-brand-600 group-hover:text-white transition duration-300 font-bold text-xl">
-                    {service.title.charAt(0)}
-                  </div>
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-3">{service.title}</h3>
-                <p className="text-gray-600 leading-relaxed text-sm mb-4">{service.description}</p>
-                <Link to="/services" className="text-brand-600 font-semibold text-sm hover:text-accent-600 flex items-center gap-1">
-                  Learn more <ArrowRight size={14} />
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Featured Properties */}
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
@@ -370,7 +296,7 @@ export const Home: React.FC = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {featuredProperties.map((prop) => (
               <FeaturedPropertyCard key={prop.id} property={prop} />
             ))}
