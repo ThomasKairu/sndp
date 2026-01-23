@@ -10,12 +10,12 @@ const Navbar: React.FC = () => {
   const location = useLocation();
 
   const navLinks = [
-    { name: 'HOME', path: '/' },
-    { name: 'PROPERTIES', path: '/properties' },
-    { name: 'SERVICES', path: '/services' },
-    { name: 'ABOUT US', path: '/about' },
-    { name: 'MEDIA', path: '/news' },
-    { name: 'CONTACT US', path: '/contact' },
+    { name: 'Home', path: '/' },
+    { name: 'About Us', path: '/about' },
+    { name: 'Properties', path: '/properties' },
+    { name: 'Portfolio', path: '/portfolio' },
+    { name: 'News', path: '/news' },
+    { name: 'Contact', path: '/contact' },
   ];
 
   const socialLinks = [
