@@ -237,16 +237,7 @@ export const PropertiesPage: React.FC = () => {
         `}</script>
       </Helmet>
       {/* Header */}
-      <div className="relative bg-brand-900 text-white py-20 overflow-hidden mb-12">
-        <div className="absolute inset-0">
-          <img src="/our properties hero background.jpg" className="w-full h-full object-cover opacity-20" alt="Background" />
-          <div className="absolute inset-0 bg-gradient-to-t from-brand-900 via-transparent to-transparent"></div>
-        </div>
-        <div className="container mx-auto px-4 relative z-10 text-center">
-          <h1 className="text-4xl font-serif font-bold mb-2">Our Properties</h1>
-          <p className="text-brand-200">Explore our diverse portfolio of prime real estate opportunities.</p>
-        </div>
-      </div>
+
 
       <div className="container mx-auto px-4">
         {/* Mobile Filter Toggle */}

@@ -239,7 +239,7 @@ export const Home: React.FC = () => {
       </Helmet>
 
       {/* Infinite Carousel Hero Section */}
-      <section className="relative h-[200px] md:h-[250px] flex items-center overflow-hidden bg-brand-900 group">
+      <section className="relative h-[300px] flex items-center overflow-hidden bg-brand-900 group">
 
         {/* Slides */}
         {HERO_SLIDES.map((slide, index) => (
@@ -256,7 +256,7 @@ export const Home: React.FC = () => {
                 height="500"
                 fetchPriority={index === 0 ? 'high' : 'low'}
                 loading={index === 0 ? 'eager' : 'lazy'}
-                className={`w-full h-full object-cover object-center transform transition-transform duration-[8000ms] ease-linear ${index === currentSlide ? 'scale-105' : 'scale-100'
+                className={`w-full h-full object-fill object-center transform transition-transform duration-[8000ms] ease-linear ${index === currentSlide ? 'scale-105' : 'scale-100'
                   }`}
               />
 

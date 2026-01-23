@@ -141,16 +141,7 @@ export const NewsPage: React.FC = () => {
           }
         `}</script>
       </Helmet>
-      <div className="relative bg-brand-900 text-white py-20 text-center">
-        <div className="absolute inset-0">
-          <img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1600&q=80" className="w-full h-full object-cover opacity-20" alt="Background" />
-          <div className="absolute inset-0 bg-gradient-to-t from-brand-900 via-transparent to-transparent"></div>
-        </div>
-        <div className="relative z-10 container mx-auto px-4">
-          <h1 className="text-4xl font-serif font-bold mb-2">News & Market Insights</h1>
-          <p className="text-brand-200 text-lg">Trusted analysis on the Kenyan Real Estate Market.</p>
-        </div>
-      </div>
+
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {BLOG_POSTS.map(post => (

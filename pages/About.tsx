@@ -82,17 +82,7 @@ export const AboutPage: React.FC = () => {
           }
         `}</script>
       </Helmet>
-      {/* Header */}
-      <div className="relative bg-brand-900 text-white py-24 overflow-hidden">
-        <div className="absolute inset-0">
-          <img src="/our story hero background.jpg" className="w-full h-full object-cover opacity-20" alt="Provision Land Background" />
-          <div className="absolute inset-0 bg-gradient-to-t from-brand-900 via-transparent to-transparent"></div>
-        </div>
-        <div className="container mx-auto px-4 text-center relative z-10">
-          <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">Our Story</h1>
-          <p className="text-xl text-brand-200 max-w-2xl mx-auto">Building trust, one title deed at a time.</p>
-        </div>
-      </div>
+
 
       {/* Mission/Vision */}
       <section className="py-16">

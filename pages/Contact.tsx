@@ -134,16 +134,7 @@ export const ContactPage: React.FC = () => {
         `}</script>
       </Helmet>
       {/* Header */}
-      <div className="relative bg-brand-900 text-white py-20 overflow-hidden text-center">
-        <div className="absolute inset-0">
-          <img src="https://images.unsplash.com/photo-1596524430615-b46475ddff6e?auto=format&fit=crop&w=1600&q=80" className="w-full h-full object-cover opacity-20" alt="Provision Land Background" />
-          <div className="absolute inset-0 bg-gradient-to-t from-brand-900 via-transparent to-transparent"></div>
-        </div>
-        <div className="relative z-10">
-          <h1 className="text-4xl font-serif font-bold mb-2">Contact Us</h1>
-          <p className="text-brand-200">We Promise and Deliver Genuinely.</p>
-        </div>
-      </div>
+
 
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 bg-white rounded-2xl shadow-xl overflow-hidden">
