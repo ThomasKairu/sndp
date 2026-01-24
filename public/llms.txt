@@ -62,8 +62,16 @@
 - [Our Properties](https://provisionlands.co.ke/properties) - Browse all land listings with ready title deeds
 - [Services](https://provisionlands.co.ke/services) - Valuation, management, and consultancy
 - [Portfolio](https://provisionlands.co.ke/portfolio) - Our completed projects and success stories
-- [News & Insights](https://provisionlands.co.ke/news) - Real estate trends and market updates
 - [Contact Us](https://provisionlands.co.ke/contact) - Get in touch for site visits and inquiries
+
+## Educational Guides (2026 Updated)
+- [How to Conduct a Land Search](https://provisionlands.co.ke/news/how-to-conduct-land-search-kenya) - Guide for Ardhisasa & Manual Search
+- [Ardhisasa Registration Guide](https://provisionlands.co.ke/news/ardhisasa-registration-guide) - Step-by-step account creation
+- [What is a Caveat?](https://provisionlands.co.ke/news/what-is-a-caveat-in-property) - Definition and removal process
+- [Foreign Land Ownership](https://provisionlands.co.ke/news/can-foreigners-buy-property-kenya) - Constitutional rights and limits
+- [Buying Land Legal Steps](https://provisionlands.co.ke/news/10-legal-steps-buying-land-kenya) - 10-step legal roadmap
+- [Land Surveying & Mutation](https://provisionlands.co.ke/news/surveying-mutation-kenya) - Understanding boundaries
+- [Building Construction Guide](https://provisionlands.co.ke/news/building-home-kenya-guide) - Approvals to finishes
 
 ## Social Media
 - [Facebook](https://web.facebook.com/p/Provision-Land-Properties-Ltd-61551485047029/)
