@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Facebook, Twitter, Instagram, Linkedin, Phone, Mail, MapPin, ChevronRight, Star, Loader2, CheckCircle, AlertCircle, Send, ExternalLink, Clock } from 'lucide-react';
+import { Menu, X, Facebook, Twitter, Instagram, Linkedin, Phone, Mail, MapPin, ChevronRight, Star, Loader2, CheckCircle, AlertCircle, Send, ExternalLink, Clock, Youtube } from 'lucide-react';
 import { COMPANY_INFO } from '../constants';
 import ChatWidget from './ChatWidget';
 import { Logo } from './Logo';
@@ -21,6 +21,7 @@ const Navbar: React.FC = () => {
   const socialLinks = [
     { icon: Facebook, href: COMPANY_INFO.facebook, label: 'Facebook' },
     { icon: Instagram, href: COMPANY_INFO.instagram, label: 'Instagram' },
+    { icon: Youtube, href: COMPANY_INFO.youtube, label: 'YouTube' },
     { icon: Linkedin, href: COMPANY_INFO.linkedin, label: 'LinkedIn' },
   ];
 
@@ -271,6 +272,7 @@ const Footer: React.FC = () => {
     { icon: Facebook, href: COMPANY_INFO.facebook, label: 'Facebook' },
     { icon: Twitter, href: COMPANY_INFO.twitter, label: 'Twitter' },
     { icon: Instagram, href: COMPANY_INFO.instagram, label: 'Instagram' },
+    { icon: Youtube, href: COMPANY_INFO.youtube, label: 'YouTube' },
     { icon: Linkedin, href: COMPANY_INFO.linkedin, label: 'LinkedIn' },
   ];
 

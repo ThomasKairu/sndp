@@ -10,6 +10,7 @@ export const COMPANY_INFO = {
   facebook: "https://web.facebook.com/p/Provision-Land-Properties-Ltd-61551485047029/?_rdc=1&_rdr#",
   twitter: "/", // Redirects to homepage
   instagram: "https://www.instagram.com/provision_land_properties_ltd/",
+  youtube: "https://www.youtube.com/@ProvisionLandPropertiesLtd/videos",
   linkedin: "/", // Redirects to homepage
   // Google Maps location
   googleMapsUrl: "https://www.google.com/maps/place/Provision+Land+%26+Properties+Ltd/@-1.035323,37.074561,17z/data=!3m1!4b1!4m6!3m5!1s0x182f4f0058accd97:0x2760e84f8974afbe!8m2!3d-1.035323!4d37.074561!16s%2Fg%2F11vylj2svd",
