@@ -1,13 +1,19 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { COMPANY_INFO } from '../constants';
 
 export const TermsOfService: React.FC = () => {
   return (
     <div className="bg-gray-50 min-h-screen py-16">
+      <Helmet>
+        <title>Terms of Service - Provision Land & Properties Ltd</title>
+        <meta name="description" content="Read our terms of service and legal agreement for using Provision Land & Properties Ltd website and services." />
+        <link rel="canonical" href="https://provisionlands.co.ke/terms" />
+      </Helmet>
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="bg-white p-8 md:p-12 rounded-xl shadow-sm border border-gray-100">
           <h1 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 mb-6">Terms of Service</h1>
-          <p className="text-gray-500 mb-8 text-sm">Last Updated: {new Date().toLocaleDateString()}</p>
+          <p className="text-gray-500 mb-8 text-sm">Last Updated: January 28, 2026</p>
 
           <div className="space-y-6 text-gray-700 leading-relaxed">
             <section>

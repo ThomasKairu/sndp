@@ -1,13 +1,19 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { COMPANY_INFO } from '../constants';
 
 export const PrivacyPolicy: React.FC = () => {
   return (
     <div className="bg-gray-50 min-h-screen py-16">
+      <Helmet>
+        <title>Privacy Policy - Provision Land & Properties Ltd</title>
+        <meta name="description" content="Read our privacy policy to understand how Provision Land & Properties Ltd collects, uses, and protects your personal information." />
+        <link rel="canonical" href="https://provisionlands.co.ke/privacy" />
+      </Helmet>
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="bg-white p-8 md:p-12 rounded-xl shadow-sm border border-gray-100">
           <h1 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 mb-6">Privacy Policy</h1>
-          <p className="text-gray-500 mb-8 text-sm">Last Updated: {new Date().toLocaleDateString()}</p>
+          <p className="text-gray-500 mb-8 text-sm">Last Updated: January 28, 2026</p>
 
           <div className="space-y-6 text-gray-700 leading-relaxed">
             <section>
@@ -55,9 +61,9 @@ export const PrivacyPolicy: React.FC = () => {
             <section>
               <h2 className="text-xl font-bold text-slate-800 mb-3">6. Contact Us</h2>
               <p>
-                If you have any questions about this Privacy Policy, please contact us at:<br/>
-                <strong>Email:</strong> {COMPANY_INFO.email}<br/>
-                <strong>Phone:</strong> {COMPANY_INFO.phone}<br/>
+                If you have any questions about this Privacy Policy, please contact us at:<br />
+                <strong>Email:</strong> {COMPANY_INFO.email}<br />
+                <strong>Phone:</strong> {COMPANY_INFO.phone}<br />
                 <strong>Address:</strong> {COMPANY_INFO.address}
               </p>
             </section>

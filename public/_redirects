@@ -1,0 +1,8 @@
+# Cloudflare Pages / Netlify SPA Redirects
+# This ensures all routes are handled by the React app
+
+# Redirect www to non-www (canonical URL)
+https://www.provisionlands.co.ke/* https://provisionlands.co.ke/:splat 301!
+
+# Handle all routes for SPA (Single Page Application)
+/*    /index.html   200
