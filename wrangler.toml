@@ -2,3 +2,9 @@ name = "sndp"
 pages_build_output_dir = "dist"
 compatibility_date = "2026-01-20"
 compatibility_flags = ["nodejs_compat"]
+
+[vars]
+PGHOST = "46.224.223.247"
+PGPORT = "5432"
+PGDATABASE = "provision_leads"
+PGUSER = "provision_user"
