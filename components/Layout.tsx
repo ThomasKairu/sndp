@@ -4,6 +4,7 @@ import { Menu, X, Facebook, Twitter, Instagram, Linkedin, Phone, Mail, MapPin, C
 import { COMPANY_INFO } from '../constants';
 import ChatWidget from './ChatWidget';
 import { Logo } from './Logo';
+import { submitNewsletterSubscription } from '../services/n8nService';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -182,15 +183,23 @@ const NewsletterForm: React.FC = () => {
     setStatus('loading');
     setMessage('');
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setStatus('success');
-      setMessage('Thank you for subscribing!');
-      setEmail('');
-      setTimeout(() => {
-        setStatus('idle');
-        setMessage('');
-      }, 5000);
+      // Submit newsletter subscription to n8n webhook
+      // n8n will handle this and connect to info@provisionlands.co.ke
+      const result = await submitNewsletterSubscription(email);
+
+      if (result.success) {
+        setStatus('success');
+        setMessage('Thank you for subscribing!');
+        setEmail('');
+        setTimeout(() => {
+          setStatus('idle');
+          setMessage('');
+        }, 5000);
+      } else {
+        throw new Error(result.error || 'Subscription failed');
+      }
     } catch (error) {
+      console.error('Newsletter subscription error:', error);
       setStatus('error');
       setMessage('Something went wrong. Please try again.');
     }

@@ -1,6 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Loader2, Bot, CheckCircle } from 'lucide-react';
-import { getChatResponse } from '../services/geminiService';
+import { MessageCircle, X, Send, Loader2, CheckCircle } from 'lucide-react';
+import { Logo } from './Logo';
+import { getChatResponse } from '../services/steveService';
+import { useTurnstile } from './Turnstile';
+
+// Turnstile site key for invisible verification
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
 
 const ChatWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,6 +17,9 @@ const ChatWidget: React.FC = () => {
   const [leadCaptured, setLeadCaptured] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Invisible Turnstile for bot protection on leads
+  const { token: turnstileToken, reset: resetTurnstile } = useTurnstile(TURNSTILE_SITE_KEY);
+
   const toggleChat = () => setIsOpen(!isOpen);
 
   const scrollToBottom = () => {
@@ -22,14 +30,7 @@ const ChatWidget: React.FC = () => {
     scrollToBottom();
   }, [messages, isOpen, leadCaptured]);
 
-  const handleLeadDetected = (details: { phoneNumber: string, customerName?: string, inquirySummary: string }) => {
-    // Simulate sending logic
-    // Simulate sending logic
-    console.log("Lead captured and processed internally.");
 
-    setLeadCaptured(true);
-    setTimeout(() => setLeadCaptured(false), 5000); // Hide notification after 5s
-  };
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -40,7 +41,7 @@ const ChatWidget: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await getChatResponse(userMsg, messages, handleLeadDetected);
+      const response = await getChatResponse(userMsg, messages);
       setMessages(prev => [...prev, { role: 'model', text: response }]);
     } catch (err) {
       setMessages(prev => [...prev, { role: 'model', text: "Sorry, something went wrong." }]);
@@ -90,13 +91,7 @@ const ChatWidget: React.FC = () => {
       {isOpen && (
         <div className="mb-4 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col h-[500px] transition-all duration-300 ease-in-out animate-fade-in-up">
           <div className="bg-brand-800 p-4 text-white flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <Bot className="h-5 w-5" />
-              <div>
-                <h3 className="font-serif font-bold">Provision Assistant</h3>
-                <p className="text-xs text-brand-200">Online | AI Powered</p>
-              </div>
-            </div>
+            <Logo className="h-8" variant="horizontal" />
             <button onClick={toggleChat} className="hover:bg-brand-700 p-1 rounded-full transition">
               <X size={20} />
             </button>
@@ -106,8 +101,8 @@ const ChatWidget: React.FC = () => {
             {messages.map((msg, idx) => (
               <div key={idx} className={`mb-4 flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[80%] p-3 rounded-lg text-sm whitespace-pre-wrap ${msg.role === 'user'
-                    ? 'bg-brand-600 text-white rounded-tr-none shadow-md'
-                    : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none shadow-sm'
+                  ? 'bg-brand-600 text-white rounded-tr-none shadow-md'
+                  : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none shadow-sm'
                   }`}>
                   {renderMessage(msg.text, msg.role)}
                 </div>

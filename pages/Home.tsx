@@ -254,7 +254,7 @@ export const Home: React.FC = () => {
                 alt={slide.title}
                 width="1920"
                 height="500"
-                fetchPriority={index === 0 ? 'high' : 'low'}
+                fetchpriority={index === 0 ? 'high' : 'low'}
                 loading={index === 0 ? 'eager' : 'lazy'}
                 className={`w-full h-full object-fill object-center transform transition-transform duration-[8000ms] ease-linear ${index === currentSlide ? 'scale-105' : 'scale-100'
                   }`}

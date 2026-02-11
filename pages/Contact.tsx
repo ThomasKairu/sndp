@@ -1,7 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { COMPANY_INFO } from '../constants';
-import { MapPin, Phone, Mail, Clock, Send, Star, Loader2, Navigation2, ExternalLink } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, Send, Star, Loader2, Navigation2, ExternalLink, ShieldCheck } from 'lucide-react';
+import { submitContactLead } from '../services/n8nService';
+import Turnstile from '../components/Turnstile';
+
+// Turnstile site key - set via environment variable
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
 
 export const ContactPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -12,9 +17,20 @@ export const ContactPage: React.FC = () => {
     message: ''
   });
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleTurnstileVerify = useCallback((token: string) => {
+    setTurnstileToken(token);
+  }, []);
+
+  const handleTurnstileExpire = useCallback(() => {
+    setTurnstileToken(null);
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
 
     // Basic Validation: Check for empty or whitespace-only strings
     if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim() || !formData.phone.trim()) {
@@ -22,17 +38,50 @@ export const ContactPage: React.FC = () => {
       return;
     }
 
+    if (!formData.subject) {
+      alert("Please select your interest/subject.");
+      return;
+    }
+
+    // Turnstile validation (if site key is configured)
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      setErrorMessage('Please complete the bot verification.');
+      return;
+    }
+
     setStatus('submitting');
 
-    // Simulate API call with Promise
-    new Promise(resolve => setTimeout(resolve, 1500))
-      .then(() => {
+    try {
+      // Submit lead to Cloudflare Function → n8n → leads table
+      const result = await submitContactLead(
+        {
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.trim(),
+          subject: formData.subject,
+          message: formData.message.trim(),
+        },
+        turnstileToken || undefined
+      );
+
+      if (result.success) {
         setStatus('success');
         setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+        setTurnstileToken(null);
         // Reset status after 5 seconds
         setTimeout(() => setStatus('idle'), 5000);
-      })
-      .catch(() => setStatus('error'));
+      } else {
+        throw new Error(result.error || result.message || 'Failed to submit');
+      }
+    } catch (error) {
+      console.error('Contact form submission error:', error);
+      setStatus('error');
+      setErrorMessage(error instanceof Error ? error.message : 'Something went wrong. Please try again or contact us directly.');
+      setTimeout(() => {
+        setStatus('idle');
+        setErrorMessage('');
+      }, 5000);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -291,9 +340,36 @@ export const ContactPage: React.FC = () => {
                   ></textarea>
                 </div>
 
+                {/* Turnstile Bot Protection */}
+                {TURNSTILE_SITE_KEY && (
+                  <div className="space-y-2">
+                    <Turnstile
+                      siteKey={TURNSTILE_SITE_KEY}
+                      onVerify={handleTurnstileVerify}
+                      onExpire={handleTurnstileExpire}
+                      theme="light"
+                      size="normal"
+                      className="flex justify-center"
+                    />
+                    {turnstileToken && (
+                      <div className="flex items-center justify-center gap-2 text-green-600 text-sm">
+                        <ShieldCheck size={16} />
+                        <span>Verified</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Error Message */}
+                {errorMessage && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                    {errorMessage}
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  disabled={status === 'submitting'}
+                  disabled={status === 'submitting' || (TURNSTILE_SITE_KEY && !turnstileToken)}
                   className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-4 rounded-lg transition flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   {status === 'submitting' ? (

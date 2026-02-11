@@ -1,29 +1,48 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { PROPERTIES } from '../constants';
+import { getProperties } from '../services/dataService'; // Use data service
+import { Property } from '../types';
 import { PropertyCard } from '../components/PropertyCard';
-import { Filter, X, Search } from 'lucide-react';
+import { Filter, X, Search, Loader2 } from 'lucide-react';
 
 export const PropertiesPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const initialSearch = searchParams.get('search') || '';
 
+  const [properties, setProperties] = useState<Property[]>([]); // State for data
+  const [isLoading, setIsLoading] = useState(true);
   const [filterLocation, setFilterLocation] = useState('All');
   const [filterType, setFilterType] = useState('All');
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Update searchQuery if URL changes (e.g. navigation from Home)
+  // Update searchQuery if URL changes
   useEffect(() => {
     setSearchQuery(searchParams.get('search') || '');
   }, [searchParams]);
 
-  const locations = ['All', ...Array.from(new Set(PROPERTIES.map(p => p.location.split(', ')[1] || p.location)))];
+  // Fetch properties on mount
+  useEffect(() => {
+    const fetchProperties = async () => {
+      setIsLoading(true);
+      try {
+        const data = await getProperties();
+        setProperties(data);
+      } catch (error) {
+        console.error('Failed to load properties:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProperties();
+  }, []);
+
+  const locations = ['All', ...Array.from(new Set(properties.map(p => p.location.split(', ')[1] || p.location)))];
   const types = ['All', 'Land', 'Residential', 'Commercial'];
 
   const filteredProperties = useMemo(() => {
-    return PROPERTIES.filter(p => {
+    return properties.filter(p => {
       const matchLoc = filterLocation === 'All' || p.location.includes(filterLocation);
       const matchType = filterType === 'All' || p.type === filterType;
 
@@ -39,7 +58,7 @@ export const PropertiesPage: React.FC = () => {
 
       return matchLoc && matchType && matchSearch;
     });
-  }, [filterLocation, filterType, searchQuery]);
+  }, [properties, filterLocation, filterType, searchQuery]);
 
   const resetFilters = () => {
     setFilterLocation('All');
@@ -72,164 +91,21 @@ export const PropertiesPage: React.FC = () => {
                 "@type": "ItemList",
                 "name": "All Property Listings",
                 "description": "Complete listing of land and properties for sale by Provision Land & Properties Ltd",
-                "numberOfItems": 12,
+                "numberOfItems": ${properties.length},
                 "itemListElement": [
-                  {
+                  ${properties.slice(0, 10).map((p, index) => `{
                     "@type": "ListItem",
-                    "position": 1,
+                    "position": ${index + 1},
                     "item": {
                       "@type": "RealEstateListing",
-                      "name": "Prime ½ Acre in Kiharu",
-                      "description": "A prime and spacious parcel ideal for residential development, farming, or future investment. Located near the shopping center.",
+                      "name": "${p.title}",
+                      "description": "${p.description.substring(0, 100).replace(/"/g, '\\"')}",
                       "url": "https://provisionlands.co.ke/properties",
-                      "image": "https://provisionlands.co.ke/Prime%20half%20Acre%20in%20Kiharu.webp",
-                      "offers": {"@type": "Offer", "price": 1800000, "priceCurrency": "KES", "availability": "https://schema.org/InStock"},
-                      "address": {"@type": "PostalAddress", "addressLocality": "Kigetuini Village, Murang'a", "addressCountry": "KE"}
+                      "image": "https://provisionlands.co.ke${p.image}",
+                      "offers": {"@type": "Offer", "price": ${p.price}, "priceCurrency": "KES", "availability": "https://schema.org/InStock"},
+                      "address": {"@type": "PostalAddress", "addressLocality": "${p.location.replace(/"/g, '\\"')}", "addressCountry": "KE"}
                     }
-                  },
-                  {
-                    "@type": "ListItem",
-                    "position": 2,
-                    "item": {
-                      "@type": "RealEstateListing",
-                      "name": "1 Acre at Mang'u",
-                      "description": "Ideal for building, farming, or residential development. Only 10 minutes drive from Thika town.",
-                      "url": "https://provisionlands.co.ke/properties",
-                      "image": "https://provisionlands.co.ke/1%20Acre%20at%20Mang'u.webp",
-                      "offers": {"@type": "Offer", "price": 5000000, "priceCurrency": "KES", "availability": "https://schema.org/InStock"},
-                      "address": {"@type": "PostalAddress", "addressLocality": "Mang'u, Thika", "addressCountry": "KE"}
-                    }
-                  },
-                  {
-                    "@type": "ListItem",
-                    "position": 3,
-                    "item": {
-                      "@type": "RealEstateListing",
-                      "name": "Sagana Makutano Plots",
-                      "description": "Genuine plots just 10 minutes from Makutano Junction. Near Kamweli Shopping Centre and schools.",
-                      "url": "https://provisionlands.co.ke/properties",
-                      "image": "https://provisionlands.co.ke/Sagana%20Makutano%20Plots.webp",
-                      "offers": {"@type": "Offer", "price": 650000, "priceCurrency": "KES", "availability": "https://schema.org/InStock"},
-                      "address": {"@type": "PostalAddress", "addressLocality": "Sagana Makutano", "addressCountry": "KE"}
-                    }
-                  },
-                  {
-                    "@type": "ListItem",
-                    "position": 4,
-                    "item": {
-                      "@type": "RealEstateListing",
-                      "name": "Ithanga Murang'a Plots",
-                      "description": "Affordable plots in Ithanga-Maragua, only 30 minutes from Thika. Ideal for home and farming.",
-                      "url": "https://provisionlands.co.ke/properties",
-                      "image": "https://provisionlands.co.ke/Ithanga%20Murang'a%20Plots.webp",
-                      "offers": {"@type": "Offer", "price": 700000, "priceCurrency": "KES", "availability": "https://schema.org/InStock"},
-                      "address": {"@type": "PostalAddress", "addressLocality": "Ithanga, Murang'a", "addressCountry": "KE"}
-                    }
-                  },
-                  {
-                    "@type": "ListItem",
-                    "position": 5,
-                    "item": {
-                      "@type": "RealEstateListing",
-                      "name": "Kilimambogo / Oldonyo Sabuk",
-                      "description": "Scenic plots near Oldonyo Sabuk national park area. Perfect for speculation or settlement.",
-                      "url": "https://provisionlands.co.ke/properties",
-                      "image": "https://provisionlands.co.ke/Kilimambogo%20Oldonyo%20Sabuk.webp",
-                      "offers": {"@type": "Offer", "price": 600000, "priceCurrency": "KES", "availability": "https://schema.org/InStock"},
-                      "address": {"@type": "PostalAddress", "addressLocality": "Kilimambogo", "addressCountry": "KE"}
-                    }
-                  },
-                  {
-                    "@type": "ListItem",
-                    "position": 6,
-                    "item": {
-                      "@type": "RealEstateListing",
-                      "name": "Tola Ngoingwa",
-                      "description": "Premium residential plots in Tola Ngoingwa estate. High-end neighborhood with security.",
-                      "url": "https://provisionlands.co.ke/properties",
-                      "image": "https://provisionlands.co.ke/Tola%20Ngoingwa.webp",
-                      "offers": {"@type": "Offer", "price": 2300000, "priceCurrency": "KES", "availability": "https://schema.org/InStock"},
-                      "address": {"@type": "PostalAddress", "addressLocality": "Tola, Thika", "addressCountry": "KE"}
-                    }
-                  },
-                  {
-                    "@type": "ListItem",
-                    "position": 7,
-                    "item": {
-                      "@type": "RealEstateListing",
-                      "name": "Muguga / Gatuanyaga",
-                      "description": "Strategic plots in Gatuanyaga area near Thika. High appreciation potential.",
-                      "url": "https://provisionlands.co.ke/properties",
-                      "image": "https://provisionlands.co.ke/Muguga%20Gatuanyaga.webp",
-                      "offers": {"@type": "Offer", "price": 1800000, "priceCurrency": "KES", "availability": "https://schema.org/InStock"},
-                      "address": {"@type": "PostalAddress", "addressLocality": "Gatuanyaga, Thika", "addressCountry": "KE"}
-                    }
-                  },
-                  {
-                    "@type": "ListItem",
-                    "position": 8,
-                    "item": {
-                      "@type": "RealEstateListing",
-                      "name": "Makuyu Mananja Acre",
-                      "description": "Large 1-acre block in Makuyu. Perfect for large scale farming or subdivision.",
-                      "url": "https://provisionlands.co.ke/properties",
-                      "image": "https://provisionlands.co.ke/Makuyu%20Mananja%20Acre.webp",
-                      "offers": {"@type": "Offer", "price": 2500000, "priceCurrency": "KES", "availability": "https://schema.org/InStock"},
-                      "address": {"@type": "PostalAddress", "addressLocality": "Makuyu Mananja", "addressCountry": "KE"}
-                    }
-                  },
-                  {
-                    "@type": "ListItem",
-                    "position": 9,
-                    "item": {
-                      "@type": "RealEstateListing",
-                      "name": "Matuu Plots",
-                      "description": "Very affordable investment plots in Matuu. Get started with land banking today.",
-                      "url": "https://provisionlands.co.ke/properties",
-                      "image": "https://provisionlands.co.ke/Matuu%20Plots.webp",
-                      "offers": {"@type": "Offer", "price": 280000, "priceCurrency": "KES", "availability": "https://schema.org/InStock"},
-                      "address": {"@type": "PostalAddress", "addressLocality": "Matuu", "addressCountry": "KE"}
-                    }
-                  },
-                  {
-                    "@type": "ListItem",
-                    "position": 10,
-                    "item": {
-                      "@type": "RealEstateListing",
-                      "name": "Landless Thika",
-                      "description": "Prime residential plot in Landless Thika. Larger size (85x100).",
-                      "url": "https://provisionlands.co.ke/properties",
-                      "image": "https://provisionlands.co.ke/Landless%20Thika.webp",
-                      "offers": {"@type": "Offer", "price": 2500000, "priceCurrency": "KES", "availability": "https://schema.org/InStock"},
-                      "address": {"@type": "PostalAddress", "addressLocality": "Landless, Thika", "addressCountry": "KE"}
-                    }
-                  },
-                  {
-                    "@type": "ListItem",
-                    "position": 11,
-                    "item": {
-                      "@type": "RealEstateListing",
-                      "name": "Thika Town Commercial",
-                      "description": "Prime commercial plot next to TIBS College. Ideal for hostels or commercial building.",
-                      "url": "https://provisionlands.co.ke/properties",
-                      "image": "https://provisionlands.co.ke/Thika%20Town%20Commercial.webp",
-                      "offers": {"@type": "Offer", "price": 7500000, "priceCurrency": "KES", "availability": "https://schema.org/InStock"},
-                      "address": {"@type": "PostalAddress", "addressLocality": "Thika Town", "addressCountry": "KE"}
-                    }
-                  },
-                  {
-                    "@type": "ListItem",
-                    "position": 12,
-                    "item": {
-                      "@type": "RealEstateListing",
-                      "name": "Mwingi Acre",
-                      "description": "Incredibly affordable 1 acre land in Mwingi. Best for long term banking.",
-                      "url": "https://provisionlands.co.ke/properties",
-                      "image": "https://provisionlands.co.ke/Mwingi%20Acre.webp",
-                      "offers": {"@type": "Offer", "price": 200000, "priceCurrency": "KES", "availability": "https://schema.org/InStock"},
-                      "address": {"@type": "PostalAddress", "addressLocality": "Mwingi", "addressCountry": "KE"}
-                    }
-                  }
+                  }`).join(',')}
                 ]
               }
             ]
@@ -314,7 +190,11 @@ export const PropertiesPage: React.FC = () => {
 
           {/* Grid */}
           <div className="flex-1">
-            {filteredProperties.length > 0 ? (
+            {isLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <Loader2 className="animate-spin text-brand-600" size={48} />
+              </div>
+            ) : filteredProperties.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredProperties.map(p => (
                   <PropertyCard key={p.id} property={p} />

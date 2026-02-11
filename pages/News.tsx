@@ -1,15 +1,35 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate } from 'react-router-dom';
-import { BLOG_POSTS } from '../constants';
-import { Calendar, ArrowRight, ArrowLeft, Clock, Tag } from 'lucide-react';
+import { getBlogPosts } from '../services/dataService'; // Use data service
+import { BlogPost } from '../types';
+import { Calendar, ArrowRight, ArrowLeft, Clock, Tag, Loader2 } from 'lucide-react';
 
 export const NewsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch posts on mount
+  useEffect(() => {
+    const fetchPosts = async () => {
+      setIsLoading(true);
+      try {
+        const data = await getBlogPosts();
+        setPosts(data);
+      } catch (error) {
+        console.error('Failed to load blog posts:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchPosts();
+  }, []);
+
   // Find the post based on the URL parameter
-  const selectedPost = id ? BLOG_POSTS.find(post => post.id === id) : null;
+  const selectedPost = id ? posts.find(post => post.id === id) : null;
 
   // Scroll to top when opening a post
   useEffect(() => {
@@ -52,6 +72,15 @@ export const NewsPage: React.FC = () => {
       return linkParts.length > 0 ? <span key={i}>{linkParts}</span> : part;
     });
   };
+
+  // Loading State
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="animate-spin text-brand-600" size={48} />
+      </div>
+    );
+  }
 
   // Detail View
   if (selectedPost) {
@@ -168,6 +197,22 @@ export const NewsPage: React.FC = () => {
     );
   }
 
+  // Not Found State (if id exists but post doesn't, and strictly not loading)
+  if (id && !selectedPost && !isLoading) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4">
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Article Not Found</h2>
+        <p className="text-gray-600 mb-6">The article you are looking for does not exist or has been removed.</p>
+        <button
+          onClick={() => navigate('/news')}
+          className="bg-brand-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-brand-700 transition"
+        >
+          Back to News
+        </button>
+      </div>
+    )
+  }
+
   // List View
   return (
     <div className="bg-white min-h-screen">
@@ -187,7 +232,7 @@ export const NewsPage: React.FC = () => {
             "description": "Stay updated with the latest real estate trends, market analysis, and land investment opportunities in Kenya.",
             "publisher": {"@id": "https://provisionlands.co.ke/#organization"},
             "blogPost": [
-              ${BLOG_POSTS.map(post => `{
+              ${posts.map(post => `{
                 "@type": "BlogPosting",
                 "headline": "${post.title}",
                 "description": "${post.excerpt}",
@@ -203,7 +248,7 @@ export const NewsPage: React.FC = () => {
 
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {BLOG_POSTS.map(post => (
+          {posts.map(post => (
             <div key={post.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition group flex flex-col h-full">
               <div className="h-48 overflow-hidden">
                 <img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
@@ -231,6 +276,12 @@ export const NewsPage: React.FC = () => {
               </div>
             </div>
           ))}
+
+          {posts.length === 0 && !isLoading && (
+            <div className="col-span-3 text-center py-20 text-gray-500">
+              No blog posts found.
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -7,6 +7,7 @@
 # ===========================================
 User-agent: *
 Allow: /
+Disallow: /admin
 Crawl-delay: 1
 
 # ===========================================
@@ -26,10 +27,6 @@ User-agent: anthropic-ai
 Allow: /
 
 User-agent: Claude-Web
-Allow: /
-
-# Google AI / Gemini Crawler
-User-agent: Google-Extended
 Allow: /
 
 # Perplexity AI
@@ -55,10 +52,12 @@ Allow: /
 # Google
 User-agent: Googlebot
 Allow: /
+Disallow: /admin
 
 # Bing
 User-agent: Bingbot
 Allow: /
+Disallow: /admin
 
 # Yahoo
 User-agent: Slurp
