@@ -244,17 +244,65 @@ export const BlogPostsTab: React.FC = () => {
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Cover Image</label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        className="flex-1 border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-500 outline-none"
-                                        value={formData.image || ''}
-                                        onChange={e => setFormData({ ...formData, image: e.target.value })}
-                                        placeholder="/path/to/image.webp"
-                                    />
-                                    <div className="w-12 h-12 bg-gray-100 rounded border border-gray-200 flex-shrink-0 bg-cover bg-center"
-                                        style={{ backgroundImage: `url("${formData.image}")` }}>
-                                        {!formData.image && <ImageIcon className="m-auto mt-3 text-gray-400" size={20} />}
+                                <div className="space-y-3">
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            className="flex-1 border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-500 outline-none"
+                                            value={formData.image || ''}
+                                            onChange={e => setFormData({ ...formData, image: e.target.value })}
+                                            placeholder="/path/to/image.webp or Upload..."
+                                        />
+                                        <div className="w-12 h-12 bg-gray-100 rounded border border-gray-200 flex-shrink-0 bg-cover bg-center"
+                                            style={{ backgroundImage: `url("${formData.image}")` }}>
+                                            {!formData.image && <ImageIcon className="m-auto mt-3 text-gray-400" size={20} />}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                                            <ImageIcon size={16} />
+                                            Upload from Device
+                                            <input
+                                                type="file"
+                                                className="hidden"
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (!file) return;
+
+                                                    if (file.size > 5 * 1024 * 1024) {
+                                                        alert("File size must be less than 5MB");
+                                                        return;
+                                                    }
+
+                                                    const reader = new FileReader();
+                                                    reader.onloadend = () => {
+                                                        const img = new Image();
+                                                        img.src = reader.result as string;
+                                                        img.onload = () => {
+                                                            const canvas = document.createElement('canvas');
+                                                            const MAX_WIDTH = 800;
+                                                            if (img.width > MAX_WIDTH) {
+                                                                const scaleSize = MAX_WIDTH / img.width;
+                                                                canvas.width = MAX_WIDTH;
+                                                                canvas.height = img.height * scaleSize;
+                                                            } else {
+                                                                canvas.width = img.width;
+                                                                canvas.height = img.height;
+                                                            }
+
+                                                            const ctx = canvas.getContext('2d');
+                                                            ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+                                                            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                                                            setFormData(prev => ({ ...prev, image: compressedBase64 }));
+                                                        };
+                                                    };
+                                                    reader.readAsDataURL(file);
+                                                }}
+                                            />
+                                        </label>
+                                        <span className="text-xs text-gray-400">Max 5MB (Auto-compressed)</span>
                                     </div>
                                 </div>
                             </div>
