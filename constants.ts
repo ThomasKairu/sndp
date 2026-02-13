@@ -7,11 +7,11 @@ export const COMPANY_INFO = {
   secondaryEmail: "provision254@gmail.com",
   address: "Clairbourn Towers, 5th Fl, Thika, Kenya", // Updated from flyer
   slogan: "We Promise and Deliver Genuinely",
-  facebook: "https://web.facebook.com/p/Provision-Land-Properties-Ltd-61551485047029/?_rdc=1&_rdr#",
+  facebook: "https://www.facebook.com/profile.php?id=61588103512394",
   twitter: "/", // Redirects to homepage
   instagram: "https://www.instagram.com/provision_land_properties_ltd/",
   youtube: "https://www.youtube.com/@ProvisionLandPropertiesLtd/videos",
-  linkedin: "/", // Redirects to homepage
+  linkedin: "https://www.linkedin.com/in/provision-land-and-properties-54502a2a2",
   // Google Maps location
   googleMapsUrl: "https://www.google.com/maps/place/Provision+Land+%26+Properties+Ltd/@-1.035323,37.074561,17z/data=!3m1!4b1!4m6!3m5!1s0x182f4f0058accd97:0x2760e84f8974afbe!8m2!3d-1.035323!4d37.074561!16s%2Fg%2F11vylj2svd",
   googleMapsEmbed: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.166837891!2d37.074561!3d-1.035323!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f4f0058accd97%3A0x2760e84f8974afbe!2sProvision%20Land%20%26%20Properties%20Ltd!5e0!3m2!1sen!2ske!4v1",
