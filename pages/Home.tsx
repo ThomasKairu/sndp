@@ -103,9 +103,9 @@ export const Home: React.FC = () => {
           "longitude": 37.074561
         },
         "sameAs": [
-          "https://www.facebook.com/profile.php?id=61588103512394",
+          "https://facebook.com/profile.php?id=61588103512394",
           "https://www.instagram.com/provision_land_properties_ltd/",
-          "https://www.linkedin.com/in/provision-land-and-properties-54502a2a2"
+          "https://linkedin.com/in/provision-land-and-properties-54502a2a2"
         ]
       },
       {

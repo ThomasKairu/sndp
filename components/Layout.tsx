@@ -146,7 +146,13 @@ const Navbar: React.FC = () => {
               ))}
               <div className="pt-4 mt-4 border-t border-gray-100 flex gap-4">
                 {socialLinks.map((social) => (
-                  <a key={social.label} href={social.href} className="text-slate-600 hover:text-[#0ea5e9]">
+                  <a
+                    key={social.label}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-slate-600 hover:text-[#0ea5e9]"
+                  >
                     <social.icon size={20} />
                   </a>
                 ))}
@@ -279,7 +285,6 @@ const Footer: React.FC = () => {
 
   const socialLinks = [
     { icon: Facebook, href: COMPANY_INFO.facebook, label: 'Facebook' },
-    { icon: Twitter, href: COMPANY_INFO.twitter, label: 'Twitter' },
     { icon: Instagram, href: COMPANY_INFO.instagram, label: 'Instagram' },
     { icon: Youtube, href: COMPANY_INFO.youtube, label: 'YouTube' },
     { icon: Linkedin, href: COMPANY_INFO.linkedin, label: 'LinkedIn' },
