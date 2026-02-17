@@ -57,6 +57,14 @@ export const AboutPage: React.FC = () => {
                     "worksFor": {"@id": "https://provisionlands.co.ke/#organization"}
                   }
                 ],
+                "aggregateRating": {
+                  "@type": "AggregateRating",
+                  "ratingValue": 5,
+                  "bestRating": 5,
+                  "worstRating": 1,
+                  "ratingCount": 3,
+                  "reviewCount": 3
+                },
                 "review": [
                   {
                     "@type": "Review",

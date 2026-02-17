@@ -2,16 +2,21 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { getProperties } from '../services/dataService'; // Use data service
+import { PROPERTIES as STATIC_PROPERTIES } from '../constants'; // Static fallback for SSR/SEO
 import { Property } from '../types';
 import { PropertyCard } from '../components/PropertyCard';
 import { Filter, X, Search, Loader2 } from 'lucide-react';
+
+// Helper to safely escape strings for JSON-LD embedding
+const sanitizeJsonString = (str: string): string =>
+  str.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
 
 export const PropertiesPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const initialSearch = searchParams.get('search') || '';
 
-  const [properties, setProperties] = useState<Property[]>([]); // State for data
-  const [isLoading, setIsLoading] = useState(true);
+  const [properties, setProperties] = useState<Property[]>(STATIC_PROPERTIES); // Initialize with static data for SEO
+  const [isLoading, setIsLoading] = useState(false); // Start as false since we have static content
   const [filterLocation, setFilterLocation] = useState('All');
   const [filterType, setFilterType] = useState('All');
   const [searchQuery, setSearchQuery] = useState(initialSearch);
@@ -98,12 +103,12 @@ export const PropertiesPage: React.FC = () => {
                     "position": ${index + 1},
                     "item": {
                       "@type": "RealEstateListing",
-                      "name": "${p.title}",
-                      "description": "${p.description.substring(0, 100).replace(/"/g, '\\"')}",
+                      "name": "${sanitizeJsonString(p.title)}",
+                      "description": "${sanitizeJsonString(p.description.substring(0, 100))}",
                       "url": "https://provisionlands.co.ke/properties",
                       "image": "https://provisionlands.co.ke${p.image}",
                       "offers": {"@type": "Offer", "price": ${p.price}, "priceCurrency": "KES", "availability": "https://schema.org/InStock"},
-                      "address": {"@type": "PostalAddress", "addressLocality": "${p.location.replace(/"/g, '\\"')}", "addressCountry": "KE"}
+                      "address": {"@type": "PostalAddress", "addressLocality": "${sanitizeJsonString(p.location)}", "addressCountry": "KE"}
                     }
                   }`).join(',')}
                 ]

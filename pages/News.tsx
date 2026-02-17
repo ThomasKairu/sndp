@@ -5,6 +5,10 @@ import { getBlogPosts } from '../services/dataService'; // Use data service
 import { BlogPost } from '../types';
 import { Calendar, ArrowRight, ArrowLeft, Clock, Tag, Loader2 } from 'lucide-react';
 
+// Helper to safely escape strings for JSON-LD embedding
+const sanitizeJsonString = (str: string): string =>
+  str.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
+
 export const NewsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -98,7 +102,7 @@ export const NewsPage: React.FC = () => {
             {
               "@context": "https://schema.org",
               "@type": "Article",
-              "headline": "${selectedPost.title}",
+              "headline": "${sanitizeJsonString(selectedPost.title)}",
               "image": "https://provisionlands.co.ke${selectedPost.image}",
               "datePublished": "${new Date(selectedPost.date).toISOString().split('T')[0]}",
               "author": {
@@ -113,7 +117,7 @@ export const NewsPage: React.FC = () => {
                   "url": "https://provisionlands.co.ke/logo.png"
                 }
               },
-              "description": "${selectedPost.excerpt}"
+              "description": "${sanitizeJsonString(selectedPost.excerpt)}"
             }
           `}</script>
         </Helmet>
@@ -234,8 +238,8 @@ export const NewsPage: React.FC = () => {
             "blogPost": [
               ${posts.map(post => `{
                 "@type": "BlogPosting",
-                "headline": "${post.title}",
-                "description": "${post.excerpt}",
+                "headline": "${sanitizeJsonString(post.title)}",
+                "description": "${sanitizeJsonString(post.excerpt)}",
                 "image": "https://provisionlands.co.ke${post.image}",
                 "datePublished": "${new Date(post.date).toISOString().split('T')[0]}",
                 "author": {"@id": "https://provisionlands.co.ke/#organization"},
