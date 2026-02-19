@@ -17,22 +17,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
     // --- Authentication Check ---
     const secret = request.headers.get('x-internal-secret');
-    const headerKeys = Array.from(request.headers.keys()).join(', ');
-
-    const srvSecret = env.N8N_INTERNAL_SECRET || "";
-    const envKeys = Object.keys(env).join(', ');
-    const maskedSrv = srvSecret.length > 0
-        ? `${srvSecret[0]}...${srvSecret[srvSecret.length - 1]} (${srvSecret.length} chars)`
-        : "undefined/empty";
-
-    if (!secret || secret.trim() !== srvSecret.trim()) {
-        return new Response(JSON.stringify({
-            error: "Unauthorized",
-            message: !secret ? "Missing header (x-internal-secret)" : "Key mismatch",
-            received_headers: headerKeys,
-            available_env_keys: envKeys,
-            debug_server_secret: maskedSrv
-        }), {
+    if (!secret || secret.trim() !== env.N8N_INTERNAL_SECRET?.trim()) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
             status: 401,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
