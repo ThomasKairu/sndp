@@ -37,8 +37,6 @@ CREATE TABLE IF NOT EXISTS properties (
     location VARCHAR(255),
     type VARCHAR(50) CHECK (type IN ('Land', 'Residential', 'Commercial')),
     size VARCHAR(50),
-    bedrooms INTEGER DEFAULT 0,
-    bathrooms INTEGER DEFAULT 0,
     description TEXT,
     image VARCHAR(500),
     images TEXT[], -- Array of image URLs
@@ -66,7 +64,4 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Migration: add bedrooms/bathrooms to existing properties table if not present
-ALTER TABLE properties ADD COLUMN IF NOT EXISTS bedrooms INTEGER DEFAULT 0;
-ALTER TABLE properties ADD COLUMN IF NOT EXISTS bathrooms INTEGER DEFAULT 0;
 

@@ -60,20 +60,20 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         // Whitelist allowed columns to prevent SQL Injection
         const ALLOWED_COLUMNS = [
             'title', 'price', 'location', 'type', 'size',
-            'bedrooms', 'bathrooms', 'description', 'image',
+            'description', 'image',
             'images', 'features', 'status'
         ];
 
         if (method === 'POST') {
             const query = `
-                INSERT INTO properties (id, title, price, location, type, size, bedrooms, bathrooms, description, image, images, features, status)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                INSERT INTO properties (id, title, price, location, type, size, description, image, images, features, status)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                 RETURNING *
             `;
             const values = [
                 body.id || crypto.randomUUID(),
                 body.title, body.price, body.location, body.type, body.size,
-                body.bedrooms || 0, body.bathrooms || 0, body.description, body.image,
+                body.description, body.image,
                 JSON.stringify(body.images || []), JSON.stringify(body.features || []), body.status
             ];
 

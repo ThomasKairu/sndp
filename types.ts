@@ -5,8 +5,6 @@ export interface Property {
   location: string;
   type: 'Land' | 'Residential' | 'Commercial';
   size: string;
-  bedrooms?: number;
-  bathrooms?: number;
   description: string;
   image: string;
   images: string[];
