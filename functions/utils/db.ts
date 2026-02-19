@@ -26,7 +26,7 @@ export const getDbClient = async (env: DbEnv) => {
         database: env.PGDATABASE,
         user: env.PGUSER,
         password: env.PGPASSWORD,
-        ssl: { rejectUnauthorized: false }, // Required for Cloudflare Workers environment
+        // ssl: { rejectUnauthorized: false }, // Disabling SSL temporarily to debug
         connectionTimeoutMillis: 8000,      // Fail fast if DB is unreachable (8 seconds)
         query_timeout: 15000,               // Per-query timeout (15 seconds)
     });
