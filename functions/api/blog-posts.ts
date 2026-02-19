@@ -45,9 +45,12 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
         // --- 2. Write requests (Protected) ---
         const secret = request.headers.get('x-internal-secret');
-        if (!secret || secret !== env.N8N_INTERNAL_SECRET) {
+        if (!secret || secret.trim() !== env.N8N_INTERNAL_SECRET?.trim()) {
             await client.end();
-            return new Response(JSON.stringify({ error: "Unauthorized" }), {
+            return new Response(JSON.stringify({
+                error: "Unauthorized",
+                message: !secret ? "Missing header" : "Key mismatch"
+            }), {
                 status: 401,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
