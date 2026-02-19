@@ -1,7 +1,22 @@
 import { Property, BlogPost } from '../types';
-import { PROPERTIES, BLOG_POSTS } from '../constants';
+import { BLOG_POSTS } from '../constants';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '';
+
+// Centralized secret retrieval — clears on 401 so stale tokens
+// don't persist in the browser after a secret rotation
+function getAdminSecret(): string {
+    return localStorage.getItem('admin_secret') || '';
+}
+
+function handleAuthError(response: Response) {
+    if (response.status === 401 || response.status === 403) {
+        // Secret is wrong or expired — clear it so the user is forced to re-login
+        localStorage.removeItem('admin_secret');
+        localStorage.removeItem('crm_auth');
+    }
+}
+
 
 // --- Properties Service ---
 
@@ -41,10 +56,12 @@ export async function createProperty(property: Property): Promise<Property> {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'x-internal-secret': localStorage.getItem('admin_secret') || ''
+            'x-internal-secret': getAdminSecret()
         },
         body: JSON.stringify(property)
     });
+
+    handleAuthError(response);
 
     // Check for HTML response
     const contentType = response.headers.get("content-type");
@@ -60,14 +77,16 @@ export async function createProperty(property: Property): Promise<Property> {
 }
 
 export async function updateProperty(id: string, updates: Partial<Property>): Promise<Property> {
-    const response = await fetch(`${API_BASE}/api/properties?id=${id}`, {
+    const response = await fetch(`${API_BASE}/api/properties?id=${encodeURIComponent(id)}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
-            'x-internal-secret': localStorage.getItem('admin_secret') || ''
+            'x-internal-secret': getAdminSecret()
         },
         body: JSON.stringify(updates)
     });
+
+    handleAuthError(response);
 
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.includes("text/html")) {
@@ -76,7 +95,6 @@ export async function updateProperty(id: string, updates: Partial<Property>): Pr
 
     if (!response.ok) {
         try {
-            // Try to parse JSON error message from API if available
             const err = await response.json() as any;
             throw new Error(err.error || 'Failed to update property');
         } catch (e) {
@@ -87,12 +105,14 @@ export async function updateProperty(id: string, updates: Partial<Property>): Pr
 }
 
 export async function deleteProperty(id: string): Promise<void> {
-    const response = await fetch(`${API_BASE}/api/properties?id=${id}`, {
+    const response = await fetch(`${API_BASE}/api/properties?id=${encodeURIComponent(id)}`, {
         method: 'DELETE',
         headers: {
-            'x-internal-secret': localStorage.getItem('admin_secret') || ''
+            'x-internal-secret': getAdminSecret()
         }
     });
+
+    handleAuthError(response);
 
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.includes("text/html")) {
@@ -125,34 +145,37 @@ export async function createBlogPost(post: BlogPost): Promise<BlogPost> {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'x-internal-secret': localStorage.getItem('admin_secret') || ''
+            'x-internal-secret': getAdminSecret()
         },
         body: JSON.stringify(post)
     });
+    handleAuthError(response);
     if (!response.ok) throw new Error('Failed to create post');
-    return post;
+    return response.json();
 }
 
 export async function updateBlogPost(id: string, updates: Partial<BlogPost>): Promise<BlogPost> {
-    const response = await fetch(`${API_BASE}/api/blog-posts?id=${id}`, {
+    const response = await fetch(`${API_BASE}/api/blog-posts?id=${encodeURIComponent(id)}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
-            'x-internal-secret': localStorage.getItem('admin_secret') || ''
+            'x-internal-secret': getAdminSecret()
         },
         body: JSON.stringify(updates)
     });
+    handleAuthError(response);
     if (!response.ok) throw new Error('Failed to update post');
-    return { ...updates } as BlogPost;
+    return response.json();
 }
 
 export async function deleteBlogPost(id: string): Promise<void> {
-    const response = await fetch(`${API_BASE}/api/blog-posts?id=${id}`, {
+    const response = await fetch(`${API_BASE}/api/blog-posts?id=${encodeURIComponent(id)}`, {
         method: 'DELETE',
         headers: {
-            'x-internal-secret': localStorage.getItem('admin_secret') || ''
+            'x-internal-secret': getAdminSecret()
         }
     });
+    handleAuthError(response);
     if (!response.ok) throw new Error('Failed to delete post');
 }
 

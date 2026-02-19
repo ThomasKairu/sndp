@@ -37,14 +37,21 @@ CREATE TABLE IF NOT EXISTS properties (
     location VARCHAR(255),
     type VARCHAR(50) CHECK (type IN ('Land', 'Residential', 'Commercial')),
     size VARCHAR(50),
+    bedrooms INTEGER DEFAULT 0,
+    bathrooms INTEGER DEFAULT 0,
     description TEXT,
-    image VARCHAR(255),
+    image VARCHAR(500),
     images TEXT[], -- Array of image URLs
     features TEXT[],
     status VARCHAR(50) DEFAULT 'For Sale',
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Indexes for common query patterns
+CREATE INDEX IF NOT EXISTS idx_properties_status ON properties(status);
+CREATE INDEX IF NOT EXISTS idx_properties_type ON properties(type);
+CREATE INDEX IF NOT EXISTS idx_properties_created ON properties(created_at DESC);
 
 -- Table: blog_posts
 CREATE TABLE IF NOT EXISTS blog_posts (
@@ -54,7 +61,12 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     content TEXT,
     date VARCHAR(50),
     category VARCHAR(100),
-    image VARCHAR(255),
+    image VARCHAR(500),
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Migration: add bedrooms/bathrooms to existing properties table if not present
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS bedrooms INTEGER DEFAULT 0;
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS bathrooms INTEGER DEFAULT 0;
+

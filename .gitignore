@@ -19,6 +19,9 @@ dist-ssr
 .env.production
 .env*.local
 
+# Sensitive helper scripts
+scripts/set-cloudflare-secrets.ps1
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

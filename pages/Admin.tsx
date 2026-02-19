@@ -88,13 +88,32 @@ export const AdminPage: React.FC = () => {
     const handleLogout = () => {
         setIsAuthenticated(false);
         localStorage.removeItem('crm_auth');
+        localStorage.removeItem('admin_secret'); // Clear secret on logout
     };
 
+    // On mount: if a secret is stored, re-validate it against the API
+    // (Don't blindly trust crm_auth=true — anyone can set that in localStorage)
     useEffect(() => {
-        const auth = localStorage.getItem('crm_auth');
-        if (auth === 'true') {
-            setIsAuthenticated(true);
-        }
+        const storedSecret = localStorage.getItem('admin_secret');
+        if (!storedSecret) return;
+
+        fetch(`${import.meta.env.VITE_API_BASE || ''}/api/leads?limit=1`, {
+            headers: { 'x-internal-secret': storedSecret }
+        })
+            .then(res => {
+                if (res.ok) {
+                    setIsAuthenticated(true);
+                } else {
+                    // Stored secret is no longer valid — clear everything
+                    localStorage.removeItem('admin_secret');
+                    localStorage.removeItem('crm_auth');
+                }
+            })
+            .catch(() => {
+                // Network error — don't auto-authenticate
+                localStorage.removeItem('admin_secret');
+                localStorage.removeItem('crm_auth');
+            });
     }, []);
 
     // Filter Leads

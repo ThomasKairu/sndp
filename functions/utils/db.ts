@@ -5,12 +5,19 @@ export interface DbEnv {
     PGPORT: string;
     PGDATABASE: string;
     PGUSER: string;
-    PGPASSWORD?: string;
+    PGPASSWORD: string; // Required — must be set as a Cloudflare Secret
 }
 
 export const getDbClient = async (env: DbEnv) => {
-    if (!env.PGHOST || !env.PGPORT || !env.PGDATABASE || !env.PGUSER) {
-        throw new Error("Database configuration missing. Please check Cloudflare environment variables.");
+    // Validate all required fields including PGPASSWORD
+    const missing = (['PGHOST', 'PGPORT', 'PGDATABASE', 'PGUSER', 'PGPASSWORD'] as const)
+        .filter(key => !env[key]);
+
+    if (missing.length > 0) {
+        throw new Error(
+            `Database configuration incomplete. Missing Cloudflare secrets/vars: ${missing.join(', ')}. ` +
+            `Please set these in Cloudflare Dashboard → Workers & Pages → sndp → Settings → Variables and Secrets.`
+        );
     }
 
     const client = new Client({
@@ -19,7 +26,9 @@ export const getDbClient = async (env: DbEnv) => {
         database: env.PGDATABASE,
         user: env.PGUSER,
         password: env.PGPASSWORD,
-        ssl: { rejectUnauthorized: false } // Required for some cloud function environments
+        ssl: { rejectUnauthorized: false }, // Required for Cloudflare Workers environment
+        connectionTimeoutMillis: 8000,      // Fail fast if DB is unreachable (8 seconds)
+        query_timeout: 15000,               // Per-query timeout (15 seconds)
     });
 
     await client.connect();
