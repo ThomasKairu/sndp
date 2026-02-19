@@ -23,9 +23,12 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     let client;
     try {
         client = await getDbClient(env);
-    } catch (err) {
+    } catch (err: any) {
         console.error("DB Connection Error:", err);
-        return new Response(JSON.stringify({ error: "Database Service Unavailable" }), {
+        return new Response(JSON.stringify({
+            error: "Database Service Unavailable",
+            details: err.message || String(err)
+        }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
