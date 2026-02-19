@@ -20,6 +20,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const headerKeys = Array.from(request.headers.keys()).join(', ');
 
     const srvSecret = env.N8N_INTERNAL_SECRET || "";
+    const envKeys = Object.keys(env).join(', ');
     const maskedSrv = srvSecret.length > 0
         ? `${srvSecret[0]}...${srvSecret[srvSecret.length - 1]} (${srvSecret.length} chars)`
         : "undefined/empty";
@@ -29,6 +30,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
             error: "Unauthorized",
             message: !secret ? "Missing header (x-internal-secret)" : "Key mismatch",
             received_headers: headerKeys,
+            available_env_keys: envKeys,
             debug_server_secret: maskedSrv
         }), {
             status: 401,
