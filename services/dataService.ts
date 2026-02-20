@@ -3,17 +3,19 @@ import { BLOG_POSTS } from '../constants';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '';
 
-// Centralized secret retrieval — clears on 401 so stale tokens
-// don't persist in the browser after a secret rotation
+// -----------------------------------------------------------------------
+// Admin secret is stored in sessionStorage (not localStorage) so it is
+// automatically cleared when the tab/browser is closed. This reduces the
+// XSS exposure window and prevents the key from persisting indefinitely.
+// -----------------------------------------------------------------------
 function getAdminSecret(): string {
-    return localStorage.getItem('admin_secret') || '';
+    return sessionStorage.getItem('admin_secret') || '';
 }
 
 function handleAuthError(response: Response) {
     if (response.status === 401 || response.status === 403) {
         // Secret is wrong or expired — clear it so the user is forced to re-login
-        localStorage.removeItem('admin_secret');
-        localStorage.removeItem('crm_auth');
+        sessionStorage.removeItem('admin_secret');
     }
 }
 
@@ -200,7 +202,7 @@ export async function getLeads(): Promise<Lead[]> {
     try {
         const response = await fetch(`${API_BASE}/api/leads`, {
             headers: {
-                'x-internal-secret': localStorage.getItem('admin_secret') || ''
+                'x-internal-secret': getAdminSecret()
             }
         });
         if (!response.ok) {
@@ -209,7 +211,7 @@ export async function getLeads(): Promise<Lead[]> {
         }
         return await response.json();
     } catch (err) {
-        console.error("Error fetching leads:", err);
+        console.error('Error fetching leads:', err);
         return [];
     }
 }
@@ -225,13 +227,13 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     try {
         const response = await fetch(`${API_BASE}/api/leads?stats=true`, {
             headers: {
-                'x-internal-secret': localStorage.getItem('admin_secret') || ''
+                'x-internal-secret': getAdminSecret()
             }
         });
         if (!response.ok) throw new Error('Failed to fetch stats');
         return await response.json();
     } catch (err) {
-        console.error("Error fetching stats:", err);
+        console.error('Error fetching stats:', err);
         return { totalLeads: '0', newToday: '0', actionRequired: '0', conversionRate: '0%' };
     }
 }

@@ -15,5 +15,6 @@ N8N_NEWSLETTER_WEBHOOK = "https://n8n.provisionlands.co.ke/webhook/newsletter"
 
 # SECRETS (must be set via Cloudflare Dashboard → Workers & Pages → sndp → Settings → Variables and Secrets)
 # These are NOT stored here – they are encrypted Cloudflare secrets:
-#   PGPASSWORD      = V2wiSP846gYoTr
-#   TURNSTILE_SECRET_KEY = <your-turnstile-secret>
+#   PGPASSWORD           (set in Cloudflare Dashboard only — never commit the actual value)
+#   N8N_INTERNAL_SECRET  (set in Cloudflare Dashboard only — never commit the actual value)
+#   TURNSTILE_SECRET_KEY (set in Cloudflare Dashboard only — never commit the actual value)

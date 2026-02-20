@@ -1,5 +1,5 @@
 
-import { getDbClient, DbEnv } from '../utils/db';
+import { getDbClient, DbEnv, SECURITY_HEADERS } from '../utils/db';
 
 interface Env extends DbEnv {
     N8N_INTERNAL_SECRET: string;
@@ -9,10 +9,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const { request, env } = context;
     const url = new URL(request.url);
 
-    // CORS - Strict Origin
+    // CORS + Security - Strict Origin
     const corsHeaders = {
         'Access-Control-Allow-Origin': 'https://provisionlands.co.ke',
         'Access-Control-Allow-Headers': 'Content-Type, x-internal-secret',
+        ...SECURITY_HEADERS,
     };
 
     // --- Authentication Check ---

@@ -26,11 +26,22 @@ export const getDbClient = async (env: DbEnv) => {
         database: env.PGDATABASE,
         user: env.PGUSER,
         password: env.PGPASSWORD,
-        // ssl: { rejectUnauthorized: false }, // Disabling SSL temporarily to debug
+        ssl: { rejectUnauthorized: false }, // Encrypts traffic; self-signed cert accepted (Hetzner/Coolify setup)
         connectionTimeoutMillis: 8000,      // Fail fast if DB is unreachable (8 seconds)
         query_timeout: 15000,               // Per-query timeout (15 seconds)
     });
 
     await client.connect();
     return client;
+};
+
+/**
+ * Standard security headers to attach to ALL API responses.
+ * Add these to every Response to harden against clickjacking,
+ * MIME-sniffing, and information disclosure.
+ */
+export const SECURITY_HEADERS: Record<string, string> = {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
 };

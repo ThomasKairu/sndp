@@ -9,6 +9,8 @@
  * Endpoint: POST /api/contact-lead
  */
 
+import { SECURITY_HEADERS } from '../utils/db';
+
 interface Env {
     N8N_CONTACT_WEBHOOK: string;
     N8N_INTERNAL_SECRET: string;
@@ -55,11 +57,12 @@ async function verifyTurnstile(token: string, secretKey: string, ip: string): Pr
 export const onRequestPost: PagesFunction<Env> = async (context) => {
     const { request, env } = context;
 
-    // CORS headers
+    // CORS + Security headers
     const corsHeaders = {
         'Access-Control-Allow-Origin': 'https://provisionlands.co.ke',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
+        ...SECURITY_HEADERS,
     };
 
     try {

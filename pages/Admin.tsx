@@ -40,6 +40,36 @@ export const AdminPage: React.FC = () => {
     const [statusFilter, setStatusFilter] = useState('all');
     const [sourceFilter, setSourceFilter] = useState('all');
 
+    // Brute-force protection — track consecutive failed attempts in sessionStorage
+    // so the counter survives re-renders but is cleared on tab close.
+    const MAX_ATTEMPTS = 5;
+    const LOCKOUT_SECONDS = 60;
+    const [lockoutSecondsLeft, setLockoutSecondsLeft] = useState(0);
+
+    // On mount, check if there is an active lockout
+    useEffect(() => {
+        const lockedUntil = Number(sessionStorage.getItem('admin_locked_until') || '0');
+        const remaining = Math.ceil((lockedUntil - Date.now()) / 1000);
+        if (remaining > 0) setLockoutSecondsLeft(remaining);
+    }, []);
+
+    // Countdown timer
+    useEffect(() => {
+        if (lockoutSecondsLeft <= 0) return;
+        const timer = setInterval(() => {
+            setLockoutSecondsLeft(prev => {
+                if (prev <= 1) {
+                    sessionStorage.removeItem('admin_locked_until');
+                    sessionStorage.removeItem('admin_fail_count');
+                    clearInterval(timer);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [lockoutSecondsLeft]);
+
     // Fetch leads & stats when authenticated and on leads tab
     useEffect(() => {
         if (isAuthenticated && activeTab === 'leads') {
@@ -57,26 +87,43 @@ export const AdminPage: React.FC = () => {
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoginError('');
-        setIsLoggingIn(true);
 
-        // Store temporarily to test
+        // --- Client-side brute-force guard ---
+        const lockedUntil = Number(sessionStorage.getItem('admin_locked_until') || '0');
+        if (Date.now() < lockedUntil) {
+            const remaining = Math.ceil((lockedUntil - Date.now()) / 1000);
+            setLoginError(`Too many failed attempts. Try again in ${remaining}s.`);
+            return;
+        }
+
+        setIsLoggingIn(true);
         const secret = password;
 
         try {
-            // Attempt to fetch specific restricted resource to verify credential
+            // Attempt to fetch a restricted resource to verify the credential
             const response = await fetch(`${import.meta.env.VITE_API_BASE || ''}/api/leads?limit=1`, {
                 headers: { 'x-internal-secret': secret }
             });
 
             if (response.ok) {
-                // Success: Valid Secret
-                localStorage.setItem('admin_secret', secret);
+                // Success: reset fail counter and store secret in sessionStorage
+                sessionStorage.removeItem('admin_fail_count');
+                sessionStorage.removeItem('admin_locked_until');
+                sessionStorage.setItem('admin_secret', secret);
                 setIsAuthenticated(true);
-                localStorage.setItem('crm_auth', 'true');
             } else {
-                // Failed
-                setLoginError('Invalid Access Key. Access Denied.');
-                localStorage.removeItem('admin_secret');
+                // Failed: increment counter and lock if threshold exceeded
+                const fails = Number(sessionStorage.getItem('admin_fail_count') || '0') + 1;
+                sessionStorage.setItem('admin_fail_count', String(fails));
+                if (fails >= MAX_ATTEMPTS) {
+                    const until = Date.now() + LOCKOUT_SECONDS * 1000;
+                    sessionStorage.setItem('admin_locked_until', String(until));
+                    setLockoutSecondsLeft(LOCKOUT_SECONDS);
+                    setLoginError(`Too many failed attempts. Locked for ${LOCKOUT_SECONDS}s.`);
+                } else {
+                    setLoginError(`Invalid Access Key. Access Denied. (${MAX_ATTEMPTS - fails} attempt${MAX_ATTEMPTS - fails === 1 ? '' : 's'} remaining)`);
+                }
+                sessionStorage.removeItem('admin_secret');
             }
         } catch (err) {
             setLoginError('Connection Error. Please check your network.');
@@ -87,14 +134,14 @@ export const AdminPage: React.FC = () => {
 
     const handleLogout = () => {
         setIsAuthenticated(false);
-        localStorage.removeItem('crm_auth');
-        localStorage.removeItem('admin_secret'); // Clear secret on logout
+        sessionStorage.removeItem('admin_secret');
     };
 
-    // On mount: if a secret is stored, re-validate it against the API
-    // (Don't blindly trust crm_auth=true — anyone can set that in localStorage)
+    // On mount: if a secret is stored, re-validate it against the API.
+    // sessionStorage is cleared on tab close, so this only fires
+    // within the same browser session — preventing stale key reuse.
     useEffect(() => {
-        const storedSecret = localStorage.getItem('admin_secret');
+        const storedSecret = sessionStorage.getItem('admin_secret');
         if (!storedSecret) return;
 
         fetch(`${import.meta.env.VITE_API_BASE || ''}/api/leads?limit=1`, {
@@ -104,15 +151,13 @@ export const AdminPage: React.FC = () => {
                 if (res.ok) {
                     setIsAuthenticated(true);
                 } else {
-                    // Stored secret is no longer valid — clear everything
-                    localStorage.removeItem('admin_secret');
-                    localStorage.removeItem('crm_auth');
+                    // Stored secret is no longer valid — clear it
+                    sessionStorage.removeItem('admin_secret');
                 }
             })
             .catch(() => {
                 // Network error — don't auto-authenticate
-                localStorage.removeItem('admin_secret');
-                localStorage.removeItem('crm_auth');
+                sessionStorage.removeItem('admin_secret');
             });
     }, []);
 
@@ -148,12 +193,13 @@ export const AdminPage: React.FC = () => {
                                         type="password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-3 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none"
-                                        placeholder="Enter secure key..."
+                                        disabled={lockoutSecondsLeft > 0}
+                                        className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-3 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none disabled:bg-gray-50 disabled:cursor-not-allowed"
+                                        placeholder={lockoutSecondsLeft > 0 ? `Locked — wait ${lockoutSecondsLeft}s` : 'Enter secure key...'}
                                     />
                                 </div>
                                 {loginError && (
-                                    <div className="text-red-500 text-sm flex items-center gap-1">
+                                    <div className="text-red-500 text-sm flex items-center gap-1 mt-2">
                                         <AlertCircle size={14} />
                                         <span>{loginError}</span>
                                     </div>
@@ -161,10 +207,10 @@ export const AdminPage: React.FC = () => {
                             </div>
                             <button
                                 type="submit"
-                                disabled={isLoggingIn}
+                                disabled={isLoggingIn || lockoutSecondsLeft > 0}
                                 className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-lg transition shadow-md disabled:opacity-50 flex justify-center items-center gap-2"
                             >
-                                {isLoggingIn ? 'Verifying...' : 'Access Dashboard'}
+                                {isLoggingIn ? 'Verifying...' : lockoutSecondsLeft > 0 ? `Locked (${lockoutSecondsLeft}s)` : 'Access Dashboard'}
                             </button>
                         </form>
                         <div className="mt-6 text-center text-xs text-gray-400 flex items-center justify-center gap-1">

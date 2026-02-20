@@ -9,6 +9,8 @@
  * Endpoint: POST /api/newsletter
  */
 
+import { SECURITY_HEADERS } from '../utils/db';
+
 interface Env {
     N8N_NEWSLETTER_WEBHOOK: string;
     N8N_INTERNAL_SECRET: string;
@@ -23,12 +25,13 @@ interface NewsletterPayload {
 export const onRequestPost: PagesFunction<Env> = async (context) => {
     const { request, env } = context;
 
-    // CORS headers + rate limit hint for WAF
+    // CORS + Security headers + rate limit hint for WAF
     const corsHeaders = {
         'Access-Control-Allow-Origin': 'https://provisionlands.co.ke',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
         'X-Rate-Limit-Group': 'newsletter', // Used by Cloudflare WAF rules
+        ...SECURITY_HEADERS,
     };
 
     try {
