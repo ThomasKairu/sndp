@@ -74,10 +74,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         return new Response(JSON.stringify(result.rows), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
-    } catch (err) {
+    } catch (err: any) {
         console.error(err);
         try { await client?.end(); } catch { }
-        return new Response(JSON.stringify({ error: "Internal Server Error" }), {
+        return new Response(JSON.stringify({
+            error: "Internal Server Error",
+            message: err.message || String(err)
+        }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
