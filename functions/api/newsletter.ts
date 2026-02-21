@@ -13,7 +13,7 @@ import { SECURITY_HEADERS } from '../utils/db';
 
 interface Env {
     N8N_NEWSLETTER_WEBHOOK: string;
-    N8N_INTERNAL_SECRET: string;
+    N8N_APP_SECRET: string;
 }
 
 interface NewsletterPayload {
@@ -36,7 +36,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
     try {
         // Validate required environment variables
-        if (!env.N8N_NEWSLETTER_WEBHOOK || !env.N8N_INTERNAL_SECRET) {
+        if (!env.N8N_NEWSLETTER_WEBHOOK || !env.N8N_APP_SECRET) {
             console.error('Missing required environment variables');
             return new Response(
                 JSON.stringify({ success: false, message: 'Service not configured' }),
@@ -79,7 +79,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-internal-secret': env.N8N_INTERNAL_SECRET,
+                'x-internal-secret': env.N8N_APP_SECRET,
             },
             body: JSON.stringify(payload),
         });

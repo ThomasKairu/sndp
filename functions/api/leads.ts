@@ -2,7 +2,7 @@
 import { getDbClient, DbEnv, SECURITY_HEADERS } from '../utils/db';
 
 interface Env extends DbEnv {
-    N8N_INTERNAL_SECRET: string;
+    N8N_APP_SECRET: string;
 }
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
@@ -20,7 +20,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
     // --- Authentication Check ---
     const secret = request.headers.get('x-internal-secret');
-    const internalSecret = env.N8N_INTERNAL_SECRET?.trim();
+    const internalSecret = env.N8N_APP_SECRET?.trim();
 
     if (!secret || secret.trim() !== internalSecret) {
         return new Response(JSON.stringify({

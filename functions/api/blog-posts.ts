@@ -2,7 +2,7 @@
 import { getDbClient, DbEnv, SECURITY_HEADERS } from '../utils/db';
 
 interface Env extends DbEnv {
-    N8N_INTERNAL_SECRET: string;
+    N8N_APP_SECRET: string;
 }
 
 export const onRequest: PagesFunction<Env> = async (context) => {
@@ -48,7 +48,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
         // --- 2. Write requests (Protected) ---
         const secret = request.headers.get('x-internal-secret');
-        const internalSecret = env.N8N_INTERNAL_SECRET?.trim();
+        const internalSecret = env.N8N_APP_SECRET?.trim();
         if (!secret || secret.trim() !== internalSecret) {
             await client.end();
             return new Response(JSON.stringify({ error: "Unauthorized" }), {

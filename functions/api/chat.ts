@@ -3,7 +3,7 @@ import { SECURITY_HEADERS } from '../utils/db';
 
 interface Env {
     N8N_WEBHOOK_CHAT: string;
-    N8N_INTERNAL_SECRET: string;
+    N8N_APP_SECRET: string;
 }
 
 // Maximum allowed payload size (50KB) to prevent DoS while allowing history
@@ -78,7 +78,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             });
         }
 
-        const secret = env.N8N_INTERNAL_SECRET;
+        const secret = env.N8N_APP_SECRET;
 
         const response = await fetch(n8nUrl, {
             method: 'POST',
