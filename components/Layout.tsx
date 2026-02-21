@@ -58,7 +58,7 @@ const Navbar: React.FC = () => {
                       but user asked to duplicate design. Assuming standard icons. */}
                 <Phone size={16} className="text-gray-600" />
               </div>
-              <span className="text-[#0ea5e9] font-medium text-sm">+254 797 331 355</span>
+              <span className="text-[#0ea5e9] font-medium text-sm">{COMPANY_INFO.whatsapp}</span>
             </div>
 
             {/* Sales Line */}
@@ -438,7 +438,7 @@ const Footer: React.FC = () => {
 
 const WhatsAppButton: React.FC = () => (
   <a
-    href="https://wa.me/254797331355"
+    href={COMPANY_INFO.whatsappLink}
     target="_blank"
     rel="noopener noreferrer"
     className="fixed bottom-6 left-6 z-50 flex items-center justify-center w-14 h-14 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-xl group animate-fade-in-up"

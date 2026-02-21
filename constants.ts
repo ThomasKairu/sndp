@@ -3,6 +3,8 @@ import { Property, TeamMember, BlogPost, Testimonial, Service } from './types';
 export const COMPANY_INFO = {
   name: "Provision Land & Properties Ltd",
   phone: "+254 797 331 355",
+  whatsapp: "+254 119 715 900",
+  whatsappLink: "https://wa.me/254119715900",
   email: "info@provisionlands.co.ke", // Updated from flyer
   secondaryEmail: "provision254@gmail.com",
   address: "Clairbourn Towers, 5th Fl, Thika, Kenya", // Updated from flyer

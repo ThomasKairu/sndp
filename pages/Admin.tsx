@@ -112,11 +112,12 @@ export const AdminPage: React.FC = () => {
                 sessionStorage.setItem('admin_secret', secret);
                 setIsAuthenticated(true);
             } else {
-                // Try to get detail hint from API
+                // Try to get detail hint or message from API
                 let errorMessage = 'Invalid Access Key. Access Denied.';
                 try {
                     const errorData = await response.json() as any;
-                    if (errorData.hint) errorMessage = `Auth Error: ${errorData.hint}`;
+                    if (errorData.message) errorMessage = `Server Error: ${errorData.message}`;
+                    else if (errorData.hint) errorMessage = `Auth Error: ${errorData.hint}`;
                 } catch (e) { /* ignore parse error */ }
 
                 // Failed: increment counter and lock if threshold exceeded
@@ -132,8 +133,12 @@ export const AdminPage: React.FC = () => {
                 }
                 sessionStorage.removeItem('admin_secret');
             }
-        } catch (err) {
-            setLoginError('Connection Error. Please check your network.');
+        } catch (err: any) {
+            if (err.message && err.message.includes('Failed to fetch')) {
+                setLoginError('Request Blocked. Please disable your Ad-Blocker or Brave Shields for this site.');
+            } else {
+                setLoginError('Connection Error. Please check your network.');
+            }
         } finally {
             setIsLoggingIn(false);
         }
