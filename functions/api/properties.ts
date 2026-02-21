@@ -9,9 +9,11 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     const url = new URL(request.url);
     const method = request.method;
 
-    // CORS + Security headers
+    // CORS + Security - Allow naked and www domains
+    const origin = request.headers.get('Origin');
+    const allowedOrigins = ['https://provisionlands.co.ke', 'https://www.provisionlands.co.ke'];
     const corsHeaders = {
-        'Access-Control-Allow-Origin': 'https://provisionlands.co.ke',
+        'Access-Control-Allow-Origin': allowedOrigins.includes(origin || '') ? origin! : 'https://provisionlands.co.ke',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, x-internal-secret',
         ...SECURITY_HEADERS,
@@ -48,7 +50,8 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
         // --- 2. Write requests (Protected) ---
         const secret = request.headers.get('x-internal-secret');
-        if (!secret || secret.trim() !== env.N8N_INTERNAL_SECRET?.trim()) {
+        const internalSecret = env.N8N_INTERNAL_SECRET?.trim();
+        if (!secret || secret.trim() !== internalSecret) {
             await client.end();
             return new Response(JSON.stringify({ error: "Unauthorized" }), {
                 status: 401,

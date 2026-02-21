@@ -9,17 +9,24 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const { request, env } = context;
     const url = new URL(request.url);
 
-    // CORS + Security - Strict Origin
+    // CORS + Security - Allow naked and www domains
+    const origin = request.headers.get('Origin');
+    const allowedOrigins = ['https://provisionlands.co.ke', 'https://www.provisionlands.co.ke'];
     const corsHeaders = {
-        'Access-Control-Allow-Origin': 'https://provisionlands.co.ke',
+        'Access-Control-Allow-Origin': allowedOrigins.includes(origin || '') ? origin! : 'https://provisionlands.co.ke',
         'Access-Control-Allow-Headers': 'Content-Type, x-internal-secret',
         ...SECURITY_HEADERS,
     };
 
     // --- Authentication Check ---
     const secret = request.headers.get('x-internal-secret');
-    if (!secret || secret.trim() !== env.N8N_INTERNAL_SECRET?.trim()) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+    const internalSecret = env.N8N_INTERNAL_SECRET?.trim();
+
+    if (!secret || secret.trim() !== internalSecret) {
+        return new Response(JSON.stringify({
+            error: "Unauthorized",
+            hint: !internalSecret ? "System secret not configured in Cloudflare" : "Incorrect key"
+        }), {
             status: 401,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });

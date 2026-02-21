@@ -112,6 +112,13 @@ export const AdminPage: React.FC = () => {
                 sessionStorage.setItem('admin_secret', secret);
                 setIsAuthenticated(true);
             } else {
+                // Try to get detail hint from API
+                let errorMessage = 'Invalid Access Key. Access Denied.';
+                try {
+                    const errorData = await response.json() as any;
+                    if (errorData.hint) errorMessage = `Auth Error: ${errorData.hint}`;
+                } catch (e) { /* ignore parse error */ }
+
                 // Failed: increment counter and lock if threshold exceeded
                 const fails = Number(sessionStorage.getItem('admin_fail_count') || '0') + 1;
                 sessionStorage.setItem('admin_fail_count', String(fails));
@@ -121,7 +128,7 @@ export const AdminPage: React.FC = () => {
                     setLockoutSecondsLeft(LOCKOUT_SECONDS);
                     setLoginError(`Too many failed attempts. Locked for ${LOCKOUT_SECONDS}s.`);
                 } else {
-                    setLoginError(`Invalid Access Key. Access Denied. (${MAX_ATTEMPTS - fails} attempt${MAX_ATTEMPTS - fails === 1 ? '' : 's'} remaining)`);
+                    setLoginError(`${errorMessage} (${MAX_ATTEMPTS - fails} attempt${MAX_ATTEMPTS - fails === 1 ? '' : 's'} remaining)`);
                 }
                 sessionStorage.removeItem('admin_secret');
             }
