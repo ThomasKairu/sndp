@@ -58,7 +58,7 @@ const Navbar: React.FC = () => {
                       but user asked to duplicate design. Assuming standard icons. */}
                 <Phone size={16} className="text-gray-600" />
               </div>
-              <span className="text-[#0ea5e9] font-medium text-sm">{COMPANY_INFO.whatsapp}</span>
+              <span className="text-[#0ea5e9] font-medium text-sm">+254 797 331 355</span>
             </div>
 
             {/* Sales Line */}

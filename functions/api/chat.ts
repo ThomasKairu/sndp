@@ -6,15 +6,18 @@ interface Env {
     N8N_INTERNAL_SECRET: string;
 }
 
-// Maximum allowed payload size (10KB) to prevent DoS
-const MAX_PAYLOAD_BYTES = 10_000;
+// Maximum allowed payload size (50KB) to prevent DoS while allowing history
+const MAX_PAYLOAD_BYTES = 50_000;
 // Maximum message length in characters
-const MAX_MESSAGE_LENGTH = 2_000;
+const MAX_MESSAGE_LENGTH = 4_000;
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
     const { request, env } = context;
+    // CORS + Security - Allow naked and www domains
+    const origin = request.headers.get('Origin');
+    const allowedOrigins = ['https://provisionlands.co.ke', 'https://www.provisionlands.co.ke'];
     const corsHeaders = {
-        'Access-Control-Allow-Origin': 'https://provisionlands.co.ke',
+        'Access-Control-Allow-Origin': allowedOrigins.includes(origin || '') ? origin! : 'https://provisionlands.co.ke',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
         ...SECURITY_HEADERS,
@@ -67,7 +70,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
         // n8n Endpoint from env
         const n8nUrl = env.N8N_WEBHOOK_CHAT;
-        if (!n8nUrl) throw new Error('Chat Webhook Configuration Missing');
+        if (!n8nUrl) {
+            console.error('Chat Webhook Configuration Missing');
+            return new Response(JSON.stringify({ error: 'Chat service not configured' }), {
+                status: 500,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
 
         const secret = env.N8N_INTERNAL_SECRET;
 
@@ -88,9 +97,21 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             });
         }
 
-        const data = await response.json();
+        const data: any = await response.json();
 
-        return new Response(JSON.stringify(data), {
+        // n8n often returns an array [ { ... } ] or a direct object { ... }
+        // We want to ensure it has a 'response' field for steveService.ts
+        let finalData: any = data;
+        if (Array.isArray(data) && data.length > 0) {
+            finalData = data[0];
+        }
+
+        // If n8n uses 'output' or 'text' instead of 'response', map it
+        if (finalData && typeof finalData === 'object' && !finalData.response && (finalData.output || finalData.text)) {
+            finalData.response = finalData.output || finalData.text;
+        }
+
+        return new Response(JSON.stringify(finalData), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
     } catch (e) {
