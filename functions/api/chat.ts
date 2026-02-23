@@ -1,26 +1,27 @@
 
-import { SECURITY_HEADERS } from '../utils/db';
+// Basic security headers
+const CHAT_SECURITY_HEADERS = {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+};
 
 interface Env {
     N8N_WEBHOOK_CHAT: string;
     N8N_APP_SECRET: string;
 }
 
-// Maximum allowed payload size (50KB) to prevent DoS while allowing history
-const MAX_PAYLOAD_BYTES = 50_000;
-// Maximum message length in characters
-const MAX_MESSAGE_LENGTH = 4_000;
-
 export const onRequestPost: PagesFunction<Env> = async (context) => {
     const { request, env } = context;
-    // CORS + Security - Allow naked and www domains
+
+    // Build CORS headers - supporting local development
     const origin = request.headers.get('Origin');
-    const allowedOrigins = ['https://provisionlands.co.ke', 'https://www.provisionlands.co.ke'];
+    const allowed = ['https://provisionlands.co.ke', 'https://www.provisionlands.co.ke', 'http://localhost:3000'];
     const corsHeaders = {
-        'Access-Control-Allow-Origin': allowedOrigins.includes(origin || '') ? origin! : 'https://provisionlands.co.ke',
+        'Access-Control-Allow-Origin': allowed.includes(origin || '') ? origin! : 'https://provisionlands.co.ke',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
-        ...SECURITY_HEADERS,
+        ...CHAT_SECURITY_HEADERS,
     };
 
     if (request.method === 'OPTIONS') {
@@ -28,51 +29,34 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
 
     try {
-        // --- Input size guard: reject oversized payloads before parsing ---
-        const contentLength = Number(request.headers.get('content-length') || '0');
-        if (contentLength > MAX_PAYLOAD_BYTES) {
-            return new Response(JSON.stringify({ error: 'Payload too large' }), {
-                status: 413,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            });
-        }
-
-        const payload = await request.json() as {
-            message?: unknown;
-            sessionId?: unknown;
-            history?: unknown;
-            name?: unknown;
-        };
-
-        // --- Required field validation ---
-        if (!payload.message || typeof payload.message !== 'string') {
-            return new Response(JSON.stringify({ error: 'Missing or invalid message field' }), {
+        // Safe JSON parsing
+        let payload: any;
+        try {
+            payload = await request.json();
+        } catch (jsonErr) {
+            return new Response(JSON.stringify({ error: 'Invalid Request JSON', details: String(jsonErr) }), {
                 status: 400,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
         }
 
-        // --- Message length guard ---
-        if (payload.message.length > MAX_MESSAGE_LENGTH) {
-            return new Response(JSON.stringify({ error: 'Message too long' }), {
+        if (!payload.message) {
+            return new Response(JSON.stringify({ error: 'Missing message field' }), {
                 status: 400,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
         }
 
-        // --- Build a sanitized payload (only forward known safe fields) ---
         const safePayload = {
-            message: payload.message.trim(),
-            sessionId: typeof payload.sessionId === 'string' ? payload.sessionId.substring(0, 128) : undefined,
-            name: typeof payload.name === 'string' ? payload.name.substring(0, 100) : 'Website Visitor',
-            history: Array.isArray(payload.history) ? payload.history.slice(-20) : [], // last 20 messages max
+            message: String(payload.message).trim(),
+            sessionId: payload.sessionId ? String(payload.sessionId) : `sess_${Math.random().toString(36).substr(2, 9)}`,
+            name: payload.name ? String(payload.name) : 'Website Visitor',
+            history: Array.isArray(payload.history) ? payload.history : [],
         };
 
-        // n8n Endpoint from env
         const n8nUrl = env.N8N_WEBHOOK_CHAT;
         if (!n8nUrl) {
-            console.error('Chat Webhook Configuration Missing');
-            return new Response(JSON.stringify({ error: 'Chat service not configured' }), {
+            return new Response(JSON.stringify({ error: 'System Configuration Error', message: 'N8N_WEBHOOK_CHAT is not defined' }), {
                 status: 500,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
@@ -80,67 +64,64 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
         const secret = env.N8N_APP_SECRET || '';
 
-        // --- Timeout Implementation (30 seconds) ---
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
-
+        // Perform the fetch to n8n
+        let response: Response;
         try {
-            const response = await fetch(n8nUrl, {
+            response = await fetch(n8nUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'x-internal-secret': secret,
                 },
                 body: JSON.stringify(safePayload),
-                signal: controller.signal,
             });
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error(`n8n error: ${response.status} - ${errorText}`);
-                return new Response(JSON.stringify({ error: 'Upstream Error', status: response.status, message: errorText }), {
-                    status: 502,
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                });
-            }
-
-            const data: any = await response.json();
-
-            // n8n often returns an array [ { ... } ] or a direct object { ... }
-            // We want to ensure it has a 'response' field for steveService.ts
-            let finalData: any = data;
-            if (Array.isArray(data) && data.length > 0) {
-                finalData = data[0];
-            }
-
-            // If n8n uses 'output', 'text', 'message', or 'reply' instead of 'response', map it
-            if (finalData && typeof finalData === 'object' && !finalData.response) {
-                const alternateKey = ['output', 'text', 'message', 'reply'].find(key => finalData[key]);
-                if (alternateKey) {
-                    finalData.response = finalData[alternateKey];
-                }
-            }
-
-            return new Response(JSON.stringify(finalData), {
+        } catch (fetchErr: any) {
+            return new Response(JSON.stringify({
+                error: 'Connection to n8n Failed',
+                message: fetchErr.message,
+                hint: 'Check if n8n service is up and the URL is correct'
+            }), {
+                status: 504,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
-        } catch (fetchError: any) {
-            clearTimeout(timeoutId); // Ensure timeout is cleared on error
-            if (fetchError.name === 'AbortError') {
-                return new Response(JSON.stringify({ error: 'Gateway Timeout - n8n took too long to respond' }), {
-                    status: 504,
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                });
-            }
-            throw fetchError; // Re-throw to be caught by outer catch
         }
-    } catch (e: any) {
-        console.error('Chat API Error:', e);
+
+        // Handle n8n response
+        const contentType = response.headers.get("content-type");
+        const isJson = contentType && contentType.includes("application/json");
+
+        if (!response.ok || !isJson) {
+            const errorText = await response.text();
+            return new Response(JSON.stringify({
+                error: 'n8n Upstream Error',
+                status: response.status,
+                message: errorText.substring(0, 500)
+            }), {
+                status: 502,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
+
+        const data: any = await response.json();
+        const finalData = Array.isArray(data) ? data[0] : data;
+
+        // Ensure we always have a 'response' key for steveService.ts
+        if (finalData && typeof finalData === 'object' && !finalData.response) {
+            const alternateKey = ['output', 'text', 'message', 'reply'].find(k => finalData[k]);
+            if (alternateKey) {
+                finalData.response = finalData[alternateKey];
+            }
+        }
+
+        return new Response(JSON.stringify(finalData), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+
+    } catch (criticalErr: any) {
         return new Response(JSON.stringify({
-            error: 'Internal Server Error',
-            message: e.message || String(e)
+            error: 'Critical Function Error',
+            message: criticalErr.message || String(criticalErr),
+            stack: criticalErr.stack?.substring(0, 100)
         }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -154,7 +135,7 @@ export const onRequestOptions: PagesFunction = async () => {
             'Access-Control-Allow-Origin': 'https://provisionlands.co.ke',
             'Access-Control-Allow-Methods': 'POST, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type',
-            ...SECURITY_HEADERS,
+            ...CHAT_SECURITY_HEADERS,
         },
     });
 };
