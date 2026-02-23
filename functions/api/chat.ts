@@ -80,40 +80,60 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
         const secret = env.N8N_APP_SECRET;
 
-        const response = await fetch(n8nUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-internal-secret': secret,
-            },
-            body: JSON.stringify(safePayload),
-        });
+        // --- Timeout Implementation (30 seconds) ---
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-        if (!response.ok) {
-            console.error(`n8n error: ${response.status}`);
-            return new Response(JSON.stringify({ error: 'Upstream Error' }), {
-                status: 502,
+        try {
+            const response = await fetch(n8nUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-internal-secret': secret,
+                },
+                body: JSON.stringify(safePayload),
+                signal: controller.signal,
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                console.error(`n8n error: ${response.status}`);
+                return new Response(JSON.stringify({ error: 'Upstream Error' }), {
+                    status: 502,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                });
+            }
+
+            const data: any = await response.json();
+
+            // n8n often returns an array [ { ... } ] or a direct object { ... }
+            // We want to ensure it has a 'response' field for steveService.ts
+            let finalData: any = data;
+            if (Array.isArray(data) && data.length > 0) {
+                finalData = data[0];
+            }
+
+            // If n8n uses 'output', 'text', 'message', or 'reply' instead of 'response', map it
+            if (finalData && typeof finalData === 'object' && !finalData.response) {
+                const alternateKey = ['output', 'text', 'message', 'reply'].find(key => finalData[key]);
+                if (alternateKey) {
+                    finalData.response = finalData[alternateKey];
+                }
+            }
+
+            return new Response(JSON.stringify(finalData), {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
+        } catch (fetchError: any) {
+            if (fetchError.name === 'AbortError') {
+                return new Response(JSON.stringify({ error: 'Gateway Timeout - n8n took too long to respond' }), {
+                    status: 504,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                });
+            }
+            throw fetchError; // Re-throw to be caught by outer catch
         }
-
-        const data: any = await response.json();
-
-        // n8n often returns an array [ { ... } ] or a direct object { ... }
-        // We want to ensure it has a 'response' field for steveService.ts
-        let finalData: any = data;
-        if (Array.isArray(data) && data.length > 0) {
-            finalData = data[0];
-        }
-
-        // If n8n uses 'output' or 'text' instead of 'response', map it
-        if (finalData && typeof finalData === 'object' && !finalData.response && (finalData.output || finalData.text)) {
-            finalData.response = finalData.output || finalData.text;
-        }
-
-        return new Response(JSON.stringify(finalData), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
     } catch (e) {
         console.error('Chat API Error:', e);
         return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
