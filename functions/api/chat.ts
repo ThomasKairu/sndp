@@ -78,7 +78,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             });
         }
 
-        const secret = env.N8N_APP_SECRET;
+        const secret = env.N8N_APP_SECRET || '';
 
         // --- Timeout Implementation (30 seconds) ---
         const controller = new AbortController();
@@ -98,8 +98,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             clearTimeout(timeoutId);
 
             if (!response.ok) {
-                console.error(`n8n error: ${response.status}`);
-                return new Response(JSON.stringify({ error: 'Upstream Error' }), {
+                const errorText = await response.text();
+                console.error(`n8n error: ${response.status} - ${errorText}`);
+                return new Response(JSON.stringify({ error: 'Upstream Error', status: response.status, message: errorText }), {
                     status: 502,
                     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                 });
@@ -126,6 +127,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
         } catch (fetchError: any) {
+            clearTimeout(timeoutId); // Ensure timeout is cleared on error
             if (fetchError.name === 'AbortError') {
                 return new Response(JSON.stringify({ error: 'Gateway Timeout - n8n took too long to respond' }), {
                     status: 504,
@@ -134,9 +136,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             }
             throw fetchError; // Re-throw to be caught by outer catch
         }
-    } catch (e) {
+    } catch (e: any) {
         console.error('Chat API Error:', e);
-        return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+        return new Response(JSON.stringify({
+            error: 'Internal Server Error',
+            message: e.message || String(e)
+        }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
