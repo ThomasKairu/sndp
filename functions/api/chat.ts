@@ -13,8 +13,9 @@ interface Env {
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
     const { request, env } = context;
+    let step = "init";
 
-    // Build CORS headers - supporting local development
+    // Build CORS headers
     const origin = request.headers.get('Origin');
     const allowed = ['https://provisionlands.co.ke', 'https://www.provisionlands.co.ke', 'http://localhost:3000'];
     const corsHeaders = {
@@ -29,12 +30,23 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
 
     try {
-        // Safe JSON parsing
+        step = "read_request_body";
+        // Use text() instead of json() to avoid "Unexpected end of JSON input" crash
+        const requestText = await request.text();
+
+        step = "parse_request_json";
         let payload: any;
+        if (!requestText || requestText.trim() === '') {
+            return new Response(JSON.stringify({ error: 'Empty Request Body' }), {
+                status: 400,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
+
         try {
-            payload = await request.json();
-        } catch (jsonErr) {
-            return new Response(JSON.stringify({ error: 'Invalid Request JSON', details: String(jsonErr) }), {
+            payload = JSON.parse(requestText);
+        } catch (e) {
+            return new Response(JSON.stringify({ error: 'Invalid JSON in Request', details: requestText.substring(0, 100) }), {
                 status: 400,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
@@ -47,6 +59,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             });
         }
 
+        step = "prep_n8n_payload";
         const safePayload = {
             message: String(payload.message).trim(),
             sessionId: payload.sessionId ? String(payload.sessionId) : `sess_${Math.random().toString(36).substr(2, 9)}`,
@@ -56,15 +69,14 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
         const n8nUrl = env.N8N_WEBHOOK_CHAT;
         if (!n8nUrl) {
-            return new Response(JSON.stringify({ error: 'System Configuration Error', message: 'N8N_WEBHOOK_CHAT is not defined' }), {
+            return new Response(JSON.stringify({ error: 'Cloudflare Configuration Error', message: 'N8N_WEBHOOK_CHAT is missing' }), {
                 status: 500,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
         }
 
+        step = "fetch_n8n";
         const secret = env.N8N_APP_SECRET || '';
-
-        // Perform the fetch to n8n
         let response: Response;
         try {
             response = await fetch(n8nUrl, {
@@ -77,23 +89,22 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             });
         } catch (fetchErr: any) {
             return new Response(JSON.stringify({
-                error: 'Connection to n8n Failed',
-                message: fetchErr.message,
-                hint: 'Check if n8n service is up and the URL is correct'
+                error: 'n8n Connection Refused',
+                message: fetchErr.message
             }), {
                 status: 504,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
         }
 
-        // Handle n8n response
+        step = "read_n8n_response";
         const contentType = response.headers.get("content-type");
         const isJson = contentType && contentType.includes("application/json");
 
         if (!response.ok || !isJson) {
             const errorText = await response.text();
             return new Response(JSON.stringify({
-                error: 'n8n Upstream Error',
+                error: 'n8n Error Response',
                 status: response.status,
                 message: errorText.substring(0, 500)
             }), {
@@ -102,10 +113,35 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             });
         }
 
-        const data: any = await response.json();
+        const rawText = await response.text();
+
+        step = "parse_n8n_json";
+        if (!rawText || rawText.trim() === '') {
+            return new Response(JSON.stringify({
+                error: 'n8n Returned Empty Body',
+                hint: 'Is your Respond to Webhook node active?'
+            }), {
+                status: 502,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
+
+        let data: any;
+        try {
+            data = JSON.parse(rawText);
+        } catch (parseErr) {
+            return new Response(JSON.stringify({
+                error: 'n8n Returned Invalid JSON',
+                message: rawText.substring(0, 500)
+            }), {
+                status: 502,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
+
+        step = "finalize_response";
         const finalData = Array.isArray(data) ? data[0] : data;
 
-        // Ensure we always have a 'response' key for steveService.ts
         if (finalData && typeof finalData === 'object' && !finalData.response) {
             const alternateKey = ['output', 'text', 'message', 'reply'].find(k => finalData[k]);
             if (alternateKey) {
@@ -119,9 +155,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
     } catch (criticalErr: any) {
         return new Response(JSON.stringify({
-            error: 'Critical Function Error',
+            error: 'Chat Script Crash',
+            step: step,
             message: criticalErr.message || String(criticalErr),
-            stack: criticalErr.stack?.substring(0, 100)
+            stack: criticalErr.stack?.substring(0, 150)
         }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
