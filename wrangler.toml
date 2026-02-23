@@ -9,9 +9,13 @@ PGHOST = "46.224.223.247"
 PGPORT = "5432"
 PGDATABASE = "provision_leads"
 PGUSER = "provision_user"
-DB_PASSWORD = "V2wiSP846gYoTr"
-N8N_APP_SECRET = "provision_2025_secure"
 N8N_WEBHOOK_CHAT = "https://n8n.provisionlands.co.ke/webhook/web-chat"
 N8N_CONTACT_WEBHOOK = "https://n8n.provisionlands.co.ke/webhook/contact-lead"
 N8N_NEWSLETTER_WEBHOOK = "https://n8n.provisionlands.co.ke/webhook/newsletter"
+
+# SECRETS (must be set via Cloudflare Dashboard → Workers & Pages → sndp → Settings → Variables and Secrets)
+# These are NOT stored here as plaintext to avoid security risks:
+# - DB_PASSWORD
+# - N8N_APP_SECRET
+
 

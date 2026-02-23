@@ -1,5 +1,5 @@
 import { Property, BlogPost } from '../types';
-import { BLOG_POSTS } from '../constants';
+import { PROPERTIES, BLOG_POSTS } from '../constants';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '';
 
@@ -30,14 +30,14 @@ export async function getProperties(): Promise<Property[]> {
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.includes("text/html")) {
             console.warn("API Error: Endpoint returned HTML instead of JSON. This likely means the API route does not exist on the server (404 Page). check if functions are deployed.");
-            return [];
+            return PROPERTIES;
         }
 
         if (response.ok) {
             try {
                 const data = await response.json();
-                if (Array.isArray(data)) return data;
-                console.warn("API Error: Response data is not an array:", data);
+                if (Array.isArray(data) && data.length > 0) return data;
+                console.warn("API Error: Response data is empty or not an array:", data);
             } catch (e) {
                 console.error("API Error: Failed to parse JSON:", e);
                 const text = await response.text();
@@ -49,8 +49,8 @@ export async function getProperties(): Promise<Property[]> {
     } catch (err) {
         console.error('Failed to fetch properties from API', err);
     }
-    // If API fails, return empty array rather than stale constants as per instructions
-    return [];
+    // Fallback to static constants if API has no data or fails
+    return PROPERTIES;
 }
 
 export async function createProperty(property: Property): Promise<Property> {
@@ -134,12 +134,12 @@ export async function getBlogPosts(): Promise<BlogPost[]> {
         const response = await fetch(`${API_BASE}/api/blog-posts`);
         if (response.ok) {
             const data = await response.json();
-            if (Array.isArray(data)) return data;
+            if (Array.isArray(data) && data.length > 0) return data;
         }
     } catch (err) {
         console.warn('Failed to fetch blog posts from API');
     }
-    return BLOG_POSTS; // Fallback allowed for blog if not specified otherwise
+    return BLOG_POSTS; // Fallback to constants
 }
 
 export async function createBlogPost(post: BlogPost): Promise<BlogPost> {
