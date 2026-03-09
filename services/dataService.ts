@@ -520,3 +520,19 @@ export async function getPaymentHistory(planId: number): Promise<InstallmentPaym
         return [];
     }
 }
+
+export async function verifyInstallmentsPin(pin: string): Promise<boolean> {
+    try {
+        const response = await fetch(`${API_BASE}/api/verify-installments-pin`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pin })
+        });
+        if (!response.ok) return false;
+        const data = await response.json();
+        return data.success === true;
+    } catch (err) {
+        console.error('Error verifying installments PIN:', err);
+        return false;
+    }
+}

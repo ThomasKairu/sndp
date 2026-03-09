@@ -6,12 +6,9 @@ import {
 } from 'lucide-react';
 import {
     getInstallmentPlans, createInstallmentPlan, updateInstallmentPlan,
-    recordPayment, getPaymentHistory
+    recordPayment, getPaymentHistory, verifyInstallmentsPin
 } from '../../services/dataService';
 import { InstallmentPlan, InstallmentPayment } from '../../types';
-
-// ─── PIN is read from env — NEVER hardcoded here ──────────────────────────────
-const CORRECT_PIN = import.meta.env.VITE_INSTALLMENTS_PIN || '1234';
 
 const PROPERTIES_LIST = [
     'Matuu Kivandini', 'Sagana Makutano', 'Tola Ngoingwa', 'Kiharu',
@@ -111,44 +108,53 @@ const ProgressBar = ({ value }: { value: number }) => (
 
 // ─── PIN Lock Screen ──────────────────────────────────────────────────────────
 const PinLockScreen = ({ onUnlock }: { onUnlock: () => void }) => {
-    const [digits, setDigits] = useState(['', '', '', '', '', '', '', '']);
+    const pinLength = 4; // Expected display length (server-side verification happens anyway)
+    const [digits, setDigits] = useState(Array(pinLength).fill(''));
     const [error, setError] = useState('');
     const [shaking, setShaking] = useState(false);
-    const refs = [
-        useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null),
-        useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null),
-        useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null),
-        useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null),
-    ];
-    const pinLength = CORRECT_PIN.length; // flexible for any length pin
+    const [verifying, setVerifying] = useState(false);
+    const refs = useRef<(HTMLInputElement | null)[]>([]);
 
-    const handleDigit = (i: number, val: string) => {
+    const handleDigit = async (i: number, val: string) => {
+        if (verifying) return;
         const ch = val.replace(/\D/g, '').slice(-1);
         const next = [...digits];
         next[i] = ch;
         setDigits(next);
         setError('');
-        if (ch && i < pinLength - 1) refs[i + 1].current?.focus();
+
+        if (ch && i < pinLength - 1) {
+            refs.current[i + 1]?.focus();
+        }
+
         // Auto-check when all digits filled
         const filled = next.slice(0, pinLength).join('');
         if (filled.length === pinLength) {
-            if (filled === CORRECT_PIN) {
-                onUnlock();
-            } else {
-                setShaking(true);
-                setError('Incorrect PIN. Try again.');
-                setTimeout(() => {
-                    setDigits(['', '', '', '', '', '', '', '']);
-                    setShaking(false);
-                    refs[0].current?.focus();
-                }, 700);
+            setVerifying(true);
+            try {
+                const isValid = await verifyInstallmentsPin(filled);
+                if (isValid) {
+                    onUnlock();
+                } else {
+                    setShaking(true);
+                    setError('Incorrect PIN. Try again.');
+                    setTimeout(() => {
+                        setDigits(Array(pinLength).fill(''));
+                        setShaking(false);
+                        setVerifying(false);
+                        refs.current[0]?.focus();
+                    }, 700);
+                }
+            } catch (err) {
+                setError('Verification failed. Server error.');
+                setVerifying(false);
             }
         }
     };
 
     const handleKeyDown = (i: number, e: React.KeyboardEvent) => {
         if (e.key === 'Backspace' && !digits[i] && i > 0) {
-            refs[i - 1].current?.focus();
+            refs.current[i-1]?.focus();
         }
     };
 
@@ -174,7 +180,7 @@ const PinLockScreen = ({ onUnlock }: { onUnlock: () => void }) => {
                         {Array.from({ length: pinLength }).map((_, i) => (
                             <input
                                 key={i}
-                                ref={refs[i]}
+                                ref={el => { refs.current[i] = el; }}
                                 type="password"
                                 inputMode="numeric"
                                 maxLength={1}
