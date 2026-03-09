@@ -44,3 +44,34 @@ export interface Service {
   description: string;
   icon: string;
 }
+
+export interface InstallmentPlan {
+  id: number;
+  client_name: string;
+  phone: string;
+  property_name: string;
+  total_amount: number;
+  amount_paid: number;
+  installment_count: number;
+  installments_paid: number;
+  start_date: string;
+  next_due_date: string;
+  installment_amount: number;
+  status: 'active' | 'completed' | 'defaulted' | 'paused';
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InstallmentPayment {
+  id: number;
+  plan_id: number;
+  client_name: string;
+  phone: string;
+  amount_paid: number;
+  payment_date: string;
+  payment_number: number;
+  recorded_by: string;
+  notes?: string;
+  created_at: string;
+}

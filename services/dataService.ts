@@ -1,4 +1,4 @@
-import { Property, BlogPost } from '../types';
+import { Property, BlogPost, InstallmentPlan, InstallmentPayment } from '../types';
 import { PROPERTIES, BLOG_POSTS } from '../constants';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '';
@@ -8,11 +8,11 @@ const API_BASE = import.meta.env.VITE_API_BASE || '';
 // automatically cleared when the tab/browser is closed. This reduces the
 // XSS exposure window and prevents the key from persisting indefinitely.
 // -----------------------------------------------------------------------
-function getAdminSecret(): string {
+export function getAdminSecret(): string {
     return sessionStorage.getItem('admin_secret') || '';
 }
 
-function handleAuthError(response: Response) {
+export function handleAuthError(response: Response) {
     if (response.status === 401 || response.status === 403) {
         // Secret is wrong or expired — clear it so the user is forced to re-login
         sessionStorage.removeItem('admin_secret');
@@ -192,6 +192,8 @@ export interface Lead {
     source: 'whatsapp' | 'website';
     status: string;
     created_at?: string;
+    last_active?: string;
+    lead_status?: string;
     // Mapped fields from Admin.tsx needs
     email?: string;
     message?: string;
@@ -216,6 +218,39 @@ export async function getLeads(): Promise<Lead[]> {
     }
 }
 
+export async function updateLead(id: number, updates: Partial<Lead>): Promise<Lead> {
+    const response = await fetch(`${API_BASE}/api/leads?id=${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-internal-secret': getAdminSecret()
+        },
+        body: JSON.stringify(updates)
+    });
+    handleAuthError(response);
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Failed to update lead: ${text}`);
+    }
+    return response.json();
+}
+
+export async function triggerFollowup(leadId: number): Promise<void> {
+    const response = await fetch(`${API_BASE}/api/leads/followup`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-internal-secret': getAdminSecret()
+        },
+        body: JSON.stringify({ lead_id: leadId })
+    });
+    handleAuthError(response);
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Failed to trigger follow-up: ${text}`);
+    }
+}
+
 export interface DashboardStats {
     totalLeads: string;
     newToday: string;
@@ -235,5 +270,253 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     } catch (err) {
         console.error('Error fetching stats:', err);
         return { totalLeads: '0', newToday: '0', actionRequired: '0', conversionRate: '0%' };
+    }
+}
+
+// --- Site Visits Service ---
+
+export interface SiteVisit {
+    id: number;
+    sender_id: string;
+    customer_name: string;
+    property_name: string;
+    visit_day: string;
+    visit_date: string; // ISO timestamp
+    reminder_24hr_sent: boolean;
+    reminder_morning_sent: boolean;
+    status: string;
+    created_at: string;
+}
+
+export async function getSiteVisits(): Promise<SiteVisit[]> {
+    try {
+        const response = await fetch(`${API_BASE}/api/site-visits`, {
+            headers: { 'x-internal-secret': getAdminSecret() }
+        });
+        handleAuthError(response);
+        if (!response.ok) throw new Error(`Failed to fetch site visits: ${response.status}`);
+        return await response.json();
+    } catch (err) {
+        console.error('Error fetching site visits:', err);
+        return [];
+    }
+}
+
+export async function createSiteVisit(visit: Partial<SiteVisit>): Promise<SiteVisit> {
+    const response = await fetch(`${API_BASE}/api/site-visits`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-internal-secret': getAdminSecret()
+        },
+        body: JSON.stringify(visit)
+    });
+    handleAuthError(response);
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Failed to create site visit: ${text}`);
+    }
+    return response.json();
+}
+
+export async function updateSiteVisit(id: number, updates: Partial<SiteVisit>): Promise<SiteVisit> {
+    const response = await fetch(`${API_BASE}/api/site-visits?id=${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-internal-secret': getAdminSecret()
+        },
+        body: JSON.stringify(updates)
+    });
+    handleAuthError(response);
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Failed to update site visit: ${text}`);
+    }
+    return response.json();
+}
+
+// --- WhatsApp CRM Service ---
+
+export interface ConversationMessage {
+    role: 'user' | 'assistant';
+    message: string;
+    created_at: string;
+}
+
+export async function getConversationHistory(senderId: string): Promise<ConversationMessage[]> {
+    try {
+        const response = await fetch(`${API_BASE}/api/conversation-history?sender_id=${encodeURIComponent(senderId)}`, {
+            headers: { 'x-internal-secret': getAdminSecret() }
+        });
+        handleAuthError(response);
+        if (!response.ok) throw new Error(`Failed to fetch conversation: ${response.status}`);
+        return await response.json();
+    } catch (err) {
+        console.error('Error fetching conversation history:', err);
+        return [];
+    }
+}
+
+export async function sendManualFollowup(senderId: string, message: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/api/manual-followup`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-internal-secret': getAdminSecret()
+        },
+        body: JSON.stringify({ sender_id: senderId, message })
+    });
+    handleAuthError(response);
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Failed to send follow-up: ${text}`);
+    }
+}
+
+// --- Broadcasts Service ---
+
+export interface BroadcastPayload {
+    property_name: string;
+    location: string;
+    price: string;
+    key_highlight: string;
+    budget_min: number;
+    budget_max: number;
+}
+
+export interface BroadcastRecord {
+    id: number;
+    property_name: string;
+    price: string;
+    sent_to: number;
+    date_sent: string;
+    status: string;
+}
+
+export async function sendInventoryBroadcast(data: BroadcastPayload): Promise<void> {
+    const response = await fetch(`${API_BASE}/api/inventory-broadcast`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-internal-secret': getAdminSecret()
+        },
+        body: JSON.stringify(data)
+    });
+    handleAuthError(response);
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Failed to send broadcast: ${text}`);
+    }
+}
+
+export async function getBroadcastHistory(): Promise<BroadcastRecord[]> {
+    try {
+        const response = await fetch(`${API_BASE}/api/broadcast-history`, {
+            headers: { 'x-internal-secret': getAdminSecret() }
+        });
+        handleAuthError(response);
+        if (!response.ok) throw new Error(`Failed to fetch broadcast history: ${response.status}`);
+        return await response.json();
+    } catch (err) {
+        console.error('Error fetching broadcast history:', err);
+        return [];
+    }
+}
+
+export async function getLeadsCount(budgetMin: number, budgetMax: number): Promise<number> {
+    try {
+        const response = await fetch(`${API_BASE}/api/leads/count?budget_min=${budgetMin}&budget_max=${budgetMax}`, {
+            headers: { 'x-internal-secret': getAdminSecret() }
+        });
+        handleAuthError(response);
+        if (!response.ok) return 0;
+        const data = await response.json() as any;
+        return data.count || 0;
+    } catch {
+        return 0;
+    }
+}
+
+// --- Installment Plans Service ---
+
+// --- Installment Plans Service ---
+
+export async function getInstallmentPlans(): Promise<InstallmentPlan[]> {
+    try {
+        const response = await fetch(`${API_BASE}/api/installments`, {
+            headers: { 'x-internal-secret': getAdminSecret() }
+        });
+        handleAuthError(response);
+        if (!response.ok) throw new Error(`Failed to fetch plans: ${response.status}`);
+        return await response.json();
+    } catch (err) {
+        console.error('Error fetching installment plans:', err);
+        return [];
+    }
+}
+
+export async function createInstallmentPlan(plan: Partial<InstallmentPlan>): Promise<InstallmentPlan> {
+    const response = await fetch(`${API_BASE}/api/installments`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-internal-secret': getAdminSecret()
+        },
+        body: JSON.stringify(plan)
+    });
+    handleAuthError(response);
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Failed to create plan: ${text}`);
+    }
+    return response.json();
+}
+
+export async function updateInstallmentPlan(id: number, updates: Partial<InstallmentPlan>): Promise<InstallmentPlan> {
+    const response = await fetch(`${API_BASE}/api/installments?id=${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-internal-secret': getAdminSecret()
+        },
+        body: JSON.stringify(updates)
+    });
+    handleAuthError(response);
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Failed to update plan: ${text}`);
+    }
+    return response.json();
+}
+
+export async function recordPayment(payment: Partial<InstallmentPayment>): Promise<InstallmentPayment> {
+    const response = await fetch(`${API_BASE}/api/installment-payments`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-internal-secret': getAdminSecret()
+        },
+        body: JSON.stringify(payment)
+    });
+    handleAuthError(response);
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Failed to record payment: ${text}`);
+    }
+    return response.json();
+}
+
+export async function getPaymentHistory(planId: number): Promise<InstallmentPayment[]> {
+    try {
+        const response = await fetch(`${API_BASE}/api/installment-payments?plan_id=${planId}`, {
+            headers: { 'x-internal-secret': getAdminSecret() }
+        });
+        handleAuthError(response);
+        if (!response.ok) throw new Error(`Failed to fetch payment history: ${response.status}`);
+        return await response.json();
+    } catch (err) {
+        console.error('Error fetching payment history:', err);
+        return [];
     }
 }
