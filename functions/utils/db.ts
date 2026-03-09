@@ -26,7 +26,7 @@ export const getDbClient = async (env: DbEnv) => {
         database: env.PGDATABASE,
         user: env.PGUSER,
         password: env.DB_PASSWORD,
-        ssl: { rejectUnauthorized: false }, // Encrypts traffic; self-signed cert accepted (Hetzner/Coolify setup)
+        ssl: false,                         // Server does not support SSL (Hetzner/Coolify default)
         connectionTimeoutMillis: 8000,      // Fail fast if DB is unreachable (8 seconds)
         query_timeout: 15000,               // Per-query timeout (15 seconds)
     });
