@@ -83,41 +83,35 @@ export async function submitContactLead(
     data: Omit<ContactLeadPayload, 'source' | 'submittedAt'>,
     turnstileToken?: string
 ): Promise<WebhookResponse> {
-    const payload = {
-        ...data,
-        source: 'contact_form' as const,
-        submittedAt: new Date().toISOString(),
-        turnstileToken, // Cloudflare Function verifies this
-    };
-
-    // In development, simulate the API call
-    if (IS_DEV) {
-        return devModeSimulation(API_ENDPOINTS.CONTACT_LEAD, payload);
-    }
-
     try {
-        const response = await fetch(API_ENDPOINTS.CONTACT_LEAD, {
-            method: 'POST',
-            headers: {
+        const response = await fetch("https://formsubmit.co/ajax/info@provisionlands.co.ke", {
+            method: "POST",
+            headers: { 
                 'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({
+                _subject: `New Lead from Website: ${data.subject}`,
+                Name: data.name,
+                Email: data.email,
+                Phone: data.phone,
+                Interest: data.subject,
+                Message: data.message,
+                _captcha: "false"
+            })
         });
-
-        // Parse response
-        const result = await response.json().catch(() => ({}));
 
         if (!response.ok) {
             return {
                 success: false,
-                message: result.message || 'Failed to submit lead',
+                message: 'Failed to submit lead',
                 error: `HTTP ${response.status}`,
             };
         }
 
         return {
             success: true,
-            message: result.message || 'Lead submitted successfully',
+            message: 'Lead submitted successfully',
         };
     } catch (error) {
         console.error('Error submitting contact lead:', error);
@@ -130,28 +124,22 @@ export async function submitContactLead(
 }
 
 /**
- * Submit newsletter subscription via Cloudflare Pages Function
- * Cloudflare Worker proxies to n8n (connected to info@provisionlands.co.ke)
+ * Submit newsletter subscription 
+ * Now connects directly to info@provisionlands.co.ke via FormSubmit
  */
 export async function submitNewsletterSubscription(email: string): Promise<WebhookResponse> {
-    const payload: NewsletterPayload = {
-        email,
-        source: 'newsletter_form',
-        subscribedAt: new Date().toISOString(),
-    };
-
-    // In development, simulate the API call
-    if (IS_DEV) {
-        return devModeSimulation(API_ENDPOINTS.NEWSLETTER, payload);
-    }
-
     try {
-        const response = await fetch(API_ENDPOINTS.NEWSLETTER, {
-            method: 'POST',
-            headers: {
+        const response = await fetch("https://formsubmit.co/ajax/info@provisionlands.co.ke", {
+            method: "POST",
+            headers: { 
                 'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({
+                _subject: "New Website Newsletter Subscription",
+                Email: email,
+                _captcha: "false"
+            })
         });
 
         if (!response.ok) {

@@ -275,7 +275,7 @@ Log
 Once this is complete, your account is fully active and ready to perform searches and transfers.
 
 **Provision Land & Properties Ltd** has all its plots for sale verified on Ardhisasa where clients can conduct independent searches before investing their money. You can contact Provision Land & Properties Ltd via +254 797 331 355 for further assistance with Ardhisasa registration.`,
-    image: '/v2/ardhisasa-digital.webp'
+    image: '/v2/our core value.webp'
   },
   {
     id: 'how-to-conduct-land-search-kenya',
@@ -329,7 +329,7 @@ To access the full land search report, you are required to pay a fee of Ksh 500.
 Once you complete the payment, the system will confirm receipt and automatically generate an electronic receipt. You can download or print this receipt for future reference.
 
 **Provision Land & Properties Ltd** has all its plots for sale verified on the [Ardhisasa app](https://ardhisasa.lands.go.ke) where clients can conduct a **provisionlands land search** before investing their money. You can contact Provision Land & Properties Ltd via +254 797 331 355 for further assistance. You can also visit our office at Clairbourn Towers, 5th Floor, Thika, Kenya.`,
-    image: '/v2/ardhisasa-digital.webp'
+    image: '/v2/our core value.webp'
   },
   {
     id: 'what-is-a-caveat-in-property',
@@ -644,7 +644,7 @@ Don't just buy anywhere. The best strategy is to buy land **2km to 5km** from th
 
 **Provision Land Opportunity**
 We identified this trend early. Our projects in **Sagana** and **Ithanga** are strategically positioned to benefit from this exact infrastructure boom.`,
-    image: '/v2/kenya-infrastructure.webp'
+    image: '/v2/Thika Town Commercial.webp'
   },
   {
     id: 'thika-machakos-growth',
@@ -672,7 +672,7 @@ If Thika is the mature brother, Machakos (specifically Matuu) is the energetic, 
 
 **The Aggressive Strategy:** Buy in Matuu. Hold for 5 years. Expect 100%+ appreciation.
 **The Conservative Strategy:** Buy in Thika (Ngoingwa). Build rental units or your retirement home immediately.`,
-    image: '/v2/real-estate-boom.webp'
+    image: '/v2/Tola Ngoingwa.webp'
   },
   {
     id: 'land-business-investment',

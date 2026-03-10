@@ -26,13 +26,13 @@ export const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
     
     const widths = [320, 640, 768, 1024, 1280, 1920];
     return widths
-      .map(w => `/v2/optimized/${filename}-${w}w.webp ${w}w`)
+      .map(w => `${encodeURI(`/v2/optimized/${filename}-${w}w.webp`)} ${w}w`)
       .join(', ');
   };
 
   const optimizedSrc = src.startsWith('/v2/') && !src.includes('/optimized/')
-    ? src.replace('/v2/', '/v2/optimized/')
-    : src;
+    ? encodeURI(src.replace('/v2/', '/v2/optimized/'))
+    : encodeURI(src);
 
   return (
     <img

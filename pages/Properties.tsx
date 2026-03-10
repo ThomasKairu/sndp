@@ -22,6 +22,10 @@ export const PropertiesPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [showFilters, setShowFilters] = useState(false);
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 9;
+
   // Update searchQuery if URL changes
   useEffect(() => {
     setSearchQuery(searchParams.get('search') || '');
@@ -64,6 +68,17 @@ export const PropertiesPage: React.FC = () => {
       return matchLoc && matchType && matchSearch;
     });
   }, [properties, filterLocation, filterType, searchQuery]);
+
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterLocation, filterType, searchQuery]);
+
+  const totalPages = Math.ceil(filteredProperties.length / ITEMS_PER_PAGE);
+  const currentProperties = filteredProperties.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const resetFilters = () => {
     setFilterLocation('All');
@@ -199,9 +214,9 @@ export const PropertiesPage: React.FC = () => {
               <div className="flex justify-center items-center h-64">
                 <Loader2 className="animate-spin text-brand-600" size={48} />
               </div>
-            ) : filteredProperties.length > 0 ? (
+            ) : currentProperties.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProperties.map(p => (
+                {currentProperties.map(p => (
                   <PropertyCard key={p.id} property={p} />
                 ))}
               </div>
@@ -213,6 +228,52 @@ export const PropertiesPage: React.FC = () => {
                   className="mt-4 text-brand-600 font-bold hover:underline"
                 >
                   View All Listings
+                </button>
+              </div>
+            )}
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && !isLoading && (
+              <div className="mt-12 flex justify-center items-center gap-2">
+                <button
+                  onClick={() => {
+                    setCurrentPage(prev => Math.max(prev - 1, 1));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 bg-white"
+                >
+                  Previous
+                </button>
+                
+                <div className="flex gap-2">
+                  {Array.from({ length: totalPages }).map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setCurrentPage(idx + 1);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className={`w-10 h-10 rounded-md font-medium transition ${
+                        currentPage === idx + 1 
+                          ? 'bg-brand-600 text-white' 
+                          : 'border border-gray-300 text-gray-600 hover:bg-gray-50 bg-white'
+                      }`}
+                    >
+                      {idx + 1}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => {
+                    setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 bg-white"
+                >
+                  Next
                 </button>
               </div>
             )}
