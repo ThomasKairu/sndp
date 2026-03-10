@@ -43,6 +43,10 @@ function todayISO() {
     return new Date().toISOString().split('T')[0];
 }
 
+function plus30DaysISO() {
+    return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+}
+
 function daysUntil(iso: string): number {
     return Math.ceil((new Date(iso).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 }
@@ -218,19 +222,19 @@ const AddPlanModal = ({ onClose, onSave }: {
     const [form, setForm] = useState({
         client_name: '', phone: '', property_name: '',
         total_amount: '', installment_count: '6',
-        start_date: todayISO(), next_due_date: '', notes: ''
+        start_date: todayISO(), next_due_date: plus30DaysISO(), notes: ''
     });
     const [saving, setSaving] = useState(false);
 
     const installmentAmt = form.total_amount && form.installment_count
-        ? Math.round(Number(form.total_amount) / Number(form.installment_count))
+        ? Math.round((Number(form.total_amount) / Number(form.installment_count)) * 100) / 100
         : 0;
 
     const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!form.client_name || !form.phone || !form.property_name || !form.total_amount || !form.next_due_date) return;
+        if (!form.client_name || !form.phone || !form.property_name || !form.total_amount || !form.start_date || !form.next_due_date) return;
         setSaving(true);
         try {
             await onSave({
@@ -297,8 +301,8 @@ const AddPlanModal = ({ onClose, onSave }: {
                             </div>
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Start Date</label>
-                            <input type="date" value={form.start_date} onChange={e => set('start_date', e.target.value)} className={inputCls} />
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Start Date *</label>
+                            <input type="date" value={form.start_date} onChange={e => set('start_date', e.target.value)} required className={inputCls} />
                         </div>
                         <div>
                             <label className="block text-xs font-semibold text-slate-600 mb-1">First Due Date *</label>

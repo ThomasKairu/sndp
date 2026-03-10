@@ -56,19 +56,32 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         const body = await request.json() as any;
         client = await getDbClient(env);
         
-        // Modal needs: Client Name, Phone, Property (dropdown), Total Amount (KES), Installment Count, First Due Date, Notes.
-        const { client_name, phone, property_name, total_amount, installment_count, first_due_date, notes } = body;
+        // Modal sends: client_name, phone, property_name, total_amount, installment_count, start_date, next_due_date, notes
+        const { 
+            client_name, 
+            phone, 
+            property_name, 
+            total_amount, 
+            installment_count, 
+            start_date,
+            next_due_date,
+            notes 
+        } = body;
         
         // Fix: Round installment_amount to 2 decimal places to match NUMERIC(12, 2)
         const installment_amount = Math.round((total_amount / installment_count) * 100) / 100;
+
+        // Safety defaults for dates
+        const finalStartDate = start_date || new Date().toISOString().split('T')[0];
+        const finalNextDueDate = next_due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
         
         const query = `
             INSERT INTO installment_plans (
                 client_name, phone, property_name, total_amount, 
                 installment_count, installment_amount, amount_paid, 
-                installments_paid, next_due_date, notes, status, created_at
+                installments_paid, start_date, next_due_date, notes, status, created_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, 0, 0, $7, $8, 'active', NOW())
+            VALUES ($1, $2, $3, $4, $5, $6, 0, 0, $7, $8, $9, 'active', NOW())
             RETURNING *
         `;
         
@@ -79,8 +92,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             total_amount, 
             installment_count, 
             installment_amount, 
-            first_due_date, 
-            notes
+            finalStartDate,
+            finalNextDueDate,
+            notes || null
         ]);
         
         return new Response(JSON.stringify(result.rows[0]), {
