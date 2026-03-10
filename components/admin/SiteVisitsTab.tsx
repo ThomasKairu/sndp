@@ -117,55 +117,83 @@ const VisitCard = ({ visit, onMarkComplete, onCancel }: {
     );
 };
 
+const PROPERTY_NAMES = [
+    'Prime ½ Acre in Kiharu', '1 Acre at Mang’u', 'Sagana Makutano Plots',
+    'Ithanga Murang’a Plots', 'Kilimambogo / Oldonyo Sabuk', 'Tola Ngoingwa',
+    'Muguga / Gatuanyaga', 'Makuyu Mananja Acre', 'Matuu Plots',
+    'Landless Thika', 'Thika Town Commercial', 'Mwingi Acre'
+];
+
 // ---- Schedule Modal ----
 const ScheduleModal = ({ onClose, onSubmit }: { onClose: () => void; onSubmit: (data: Partial<SiteVisit>) => void }) => {
-    const [form, setForm] = useState({ customer_name: '', sender_id: '', property_name: '', date: '', time: '' });
+    const [form, setForm] = useState({ 
+        customer_name: '', sender_id: '', property_name: PROPERTY_NAMES[0], 
+        date: '', time: '', notes: '' 
+    });
     const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!form.customer_name || !form.sender_id || !form.property_name || !form.date || !form.time) return;
         setSubmitting(true);
-        const iso = new Date(`${form.date}T${form.time}`).toISOString();
-        await onSubmit({ customer_name: form.customer_name, sender_id: form.sender_id, property_name: form.property_name, visit_date: iso, visit_day: form.date, status: 'scheduled' });
-        setSubmitting(false);
+        try {
+            const iso = new Date(`${form.date}T${form.time}`).toISOString();
+            await onSubmit({ 
+                customer_name: form.customer_name, 
+                sender_id: form.sender_id, 
+                property_name: form.property_name, 
+                visit_date: iso, 
+                notes: form.notes,
+                status: 'scheduled' 
+            });
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-                <div className="bg-brand-600 p-5 rounded-t-2xl flex justify-between items-center">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                <div className="bg-brand-600 p-5 flex justify-between items-center">
                     <h3 className="text-white font-bold text-lg">Schedule a Site Visit</h3>
-                    <button onClick={onClose} className="text-brand-200 hover:text-white transition text-xl font-bold">&times;</button>
+                    <button onClick={onClose} className="text-brand-200 hover:text-white transition"><XCircle size={24} /></button>
                 </div>
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                     <div>
-                        <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1 block">Customer Name</label>
-                        <input value={form.customer_name} onChange={e => setForm(f => ({ ...f, customer_name: e.target.value }))} required placeholder="Full name" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none" />
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Customer Name</label>
+                        <input value={form.customer_name} onChange={e => setForm(f => ({ ...f, customer_name: e.target.value }))} required placeholder="Full name" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none transition" />
                     </div>
                     <div>
-                        <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1 block">Phone Number</label>
-                        <input value={form.sender_id} onChange={e => setForm(f => ({ ...f, sender_id: e.target.value }))} required placeholder="07xxxxxxxx" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none" />
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Phone Number</label>
+                        <input value={form.sender_id} onChange={e => setForm(f => ({ ...f, sender_id: e.target.value }))} required placeholder="07xxxxxxxx" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none transition" />
                     </div>
                     <div>
-                        <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1 block">Property</label>
-                        <select value={form.property_name} onChange={e => setForm(f => ({ ...f, property_name: e.target.value }))} required className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white">
-                            <option value="">-- Select property --</option>
-                            {PROPERTIES_LIST.map(p => <option key={p} value={p}>{p}</option>)}
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Interest Property</label>
+                        <select value={form.property_name} onChange={e => setForm(f => ({ ...f, property_name: e.target.value }))} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white transition">
+                            {PROPERTY_NAMES.map(p => <option key={p} value={p}>{p}</option>)}
                         </select>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1 block">Date</label>
-                            <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} required className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none" />
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Date</label>
+                            <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} required className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none transition" />
                         </div>
                         <div>
-                            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1 block">Time</label>
-                            <input type="time" value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))} required className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none" />
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Time</label>
+                            <input type="time" value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))} required className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none transition" />
                         </div>
                     </div>
-                    <button type="submit" disabled={submitting} className="w-full mt-2 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-lg transition flex items-center justify-center gap-2 disabled:opacity-60">
-                        {submitting ? <><Loader2 size={16} className="animate-spin" /> Scheduling...</> : 'Schedule Visit'}
+                    <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Internal Notes</label>
+                        <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Any specific requirements..." rows={3} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none resize-none transition" />
+                    </div>
+                    <button
+                        type="submit"
+                        disabled={submitting}
+                        className="w-full bg-brand-600 hover:bg-brand-700 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-brand-200 transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
+                    >
+                        {submitting ? <Loader2 size={18} className="animate-spin" /> : <Calendar size={18} />}
+                        Schedule Visit
                     </button>
                 </form>
             </div>

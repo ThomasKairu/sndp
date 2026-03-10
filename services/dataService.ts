@@ -184,20 +184,56 @@ export async function deleteBlogPost(id: string): Promise<void> {
 // --- Leads Service (CRM) ---
 
 export interface Lead {
-    id: number;
-    name: string;
     phone: string;
-    interest: string;
-    ai_summary: string;
-    source: 'whatsapp' | 'website';
-    status: string;
-    created_at?: string;
-    last_active?: string;
-    lead_status?: string;
-    // Mapped fields from Admin.tsx needs
-    email?: string;
-    message?: string;
-    priority?: 'high' | 'normal' | 'low';
+    last_seen: string;
+    message_count: string | number;
+    last_message: string;
+    last_response: string;
+    status: 'hot' | 'warm';
+    // Helper fields added by frontend
+    name?: string;
+    source?: 'whatsapp' | 'website';
+}
+
+/**
+ * Strips JSON wrapping from website chatbot messages
+ */
+export function parseMessage(msg: string): string {
+    if (!msg) return '';
+    if (msg.startsWith('{') && msg.includes('"message"')) {
+        try {
+            const parsed = JSON.parse(msg);
+            return parsed.message || msg;
+        } catch {
+            return msg;
+        }
+    }
+    return msg;
+}
+
+/**
+ * Extracts customer name from Steve's responses
+ */
+export function extractName(responseText: string): string | null {
+    if (!responseText) return null;
+    
+    // Patterns like "Hi [Name]", "Hello [Name]", "great [Name]", "[Name]!"
+    const patterns = [
+        /(?:Hi|Hello|Hey|Greetings|Great)\s+([A-Z][a-z]+)/,
+        /([A-Z][a-z]+),\s+welcome/,
+        /([A-Z][a-z]+)!\s+I'm\s+Steve/,
+        /([A-Z][a-z]+)\s+from\s+Provision/
+    ];
+
+    for (const pattern of patterns) {
+        const match = responseText.match(pattern);
+        if (match && match[1]) {
+            // Basic sanity check: reject common words capitalized
+            const blackList = ['Steve', 'Provision', 'Land', 'Property', 'Wait', 'Here'];
+            if (!blackList.includes(match[1])) return match[1];
+        }
+    }
+    return null;
 }
 
 export async function getLeads(): Promise<Lead[]> {
@@ -211,15 +247,20 @@ export async function getLeads(): Promise<Lead[]> {
             console.error(`Failed to fetch leads: ${response.status}`);
             throw new Error('Failed to fetch leads');
         }
-        return await response.json();
+        const data = await response.json() as Lead[];
+        return data.map(l => ({
+            ...l,
+            name: extractName(l.last_response) || l.phone,
+            source: /^254\d{9}$/.test(l.phone) ? 'whatsapp' : 'website'
+        }));
     } catch (err) {
         console.error('Error fetching leads:', err);
         return [];
     }
 }
 
-export async function updateLead(id: number, updates: Partial<Lead>): Promise<Lead> {
-    const response = await fetch(`${API_BASE}/api/leads?id=${id}`, {
+export async function updateLead(phone: string, updates: Partial<Lead>): Promise<Lead> {
+    const response = await fetch(`${API_BASE}/api/leads?phone=${phone}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -235,14 +276,14 @@ export async function updateLead(id: number, updates: Partial<Lead>): Promise<Le
     return response.json();
 }
 
-export async function triggerFollowup(leadId: number): Promise<void> {
+export async function triggerFollowup(phone: string): Promise<void> {
     const response = await fetch(`${API_BASE}/api/leads/followup`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'x-internal-secret': getAdminSecret()
         },
-        body: JSON.stringify({ lead_id: leadId })
+        body: JSON.stringify({ phone })
     });
     handleAuthError(response);
     if (!response.ok) {
@@ -252,10 +293,12 @@ export async function triggerFollowup(leadId: number): Promise<void> {
 }
 
 export interface DashboardStats {
-    totalLeads: string;
-    newToday: string;
-    actionRequired: string;
-    conversionRate: string;
+    totalLeads: number;
+    hotLeads: number;
+    warmLeads: number;
+    silentSevenDays: number;
+    pipelineValue: string;
+    convertedCount: number;
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
@@ -267,9 +310,13 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         });
         if (!response.ok) throw new Error('Failed to fetch stats');
         return await response.json();
+        return await response.json();
     } catch (err) {
         console.error('Error fetching stats:', err);
-        return { totalLeads: '0', newToday: '0', actionRequired: '0', conversionRate: '0%' };
+        return { 
+            totalLeads: 0, hotLeads: 0, warmLeads: 0, 
+            silentSevenDays: 0, pipelineValue: 'KES 0', convertedCount: 0 
+        };
     }
 }
 
@@ -282,6 +329,7 @@ export interface SiteVisit {
     property_name: string;
     visit_day: string;
     visit_date: string; // ISO timestamp
+    notes?: string;
     reminder_24hr_sent: boolean;
     reminder_morning_sent: boolean;
     status: string;
@@ -346,7 +394,7 @@ export interface ConversationMessage {
 
 export async function getConversationHistory(senderId: string): Promise<ConversationMessage[]> {
     try {
-        const response = await fetch(`${API_BASE}/api/conversation-history?sender_id=${encodeURIComponent(senderId)}`, {
+        const response = await fetch(`${API_BASE}/api/conversations/${encodeURIComponent(senderId)}`, {
             headers: { 'x-internal-secret': getAdminSecret() }
         });
         handleAuthError(response);

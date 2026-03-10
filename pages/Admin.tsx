@@ -30,7 +30,8 @@ import {
     Menu
 } from 'lucide-react';
 import { COMPANY_INFO } from '../constants';
-import { getLeads, updateLead, triggerFollowup, Lead } from '../services/dataService';
+import { getLeads, updateLead, triggerFollowup, Lead, getDashboardStats, parseMessage } from '../services/dataService';
+import { LiveConversationsTab } from '../components/admin/LiveConversationsTab';
 
 import { PropertiesTab } from '../components/admin/PropertiesTab';
 import { BlogPostsTab } from '../components/admin/BlogPostsTab';
@@ -130,20 +131,20 @@ const StatusBadge = ({ status }: { status: string }) => {
 const LeadDrawer = ({ lead, onClose, onUpdate, showToast }: {
     lead: Lead;
     onClose: () => void;
-    onUpdate: (id: number, updates: Partial<Lead>) => void;
+    onUpdate: (phone: string, updates: Partial<Lead>) => void;
     showToast: (msg: string, type?: 'success' | 'error') => void;
 }) => {
     const [status, setStatus] = useState(lead.status);
     const [saving, setSaving] = useState(false);
     const [triggering, setTriggering] = useState(false);
-    const days = daysSince(lead.last_active || lead.created_at);
+    const days = daysSince(lead.last_seen);
 
     const saveStatus = async (newStatus: string) => {
         setStatus(newStatus);
         setSaving(true);
         try {
-            await updateLead(lead.id, { status: newStatus });
-            onUpdate(lead.id, { status: newStatus });
+            await updateLead(lead.phone, { status: newStatus as any });
+            onUpdate(lead.phone, { status: newStatus as any });
             showToast('Status updated!', 'success');
         } catch {
             showToast('Failed to update status.', 'error');
@@ -155,7 +156,7 @@ const LeadDrawer = ({ lead, onClose, onUpdate, showToast }: {
     const handleTriggerFollowup = async () => {
         setTriggering(true);
         try {
-            await triggerFollowup(lead.id);
+            await triggerFollowup(lead.phone);
             showToast('Follow-up triggered!', 'success');
         } catch {
             showToast('Failed to trigger follow-up.', 'error');
@@ -202,33 +203,23 @@ const LeadDrawer = ({ lead, onClose, onUpdate, showToast }: {
                                 </a>
                             </div>
                         )}
-                        {lead.email && (
-                            <div className="flex items-center gap-2 text-sm text-slate-700">
-                                <Mail size={14} className="text-brand-500" />
-                                <a href={`mailto:${lead.email}`} className="hover:text-brand-600">{lead.email}</a>
-                            </div>
-                        )}
                         <div className="flex items-center gap-2 text-sm text-slate-700">
                             <Calendar size={14} className="text-brand-500" />
                             <span>Last contact: <b className={days >= 7 ? 'text-red-600' : 'text-slate-700'}>{days} day{days !== 1 ? 's' : ''} ago</b></span>
                         </div>
                     </div>
 
-                    {/* Interest */}
-                    {lead.interest && (
-                        <div className="bg-brand-50 rounded-lg p-3">
-                            <p className="text-xs font-semibold text-brand-700 uppercase tracking-wide mb-1">Interest</p>
-                            <p className="text-sm text-slate-700">{lead.interest}</p>
-                        </div>
-                    )}
+                    {/* Interest (Parsed from last message) */}
+                    <div className="bg-brand-50 rounded-lg p-3">
+                        <p className="text-xs font-semibold text-brand-700 uppercase tracking-wide mb-1">Interest / Last Message</p>
+                        <p className="text-sm text-slate-700">{parseMessage(lead.last_message)}</p>
+                    </div>
 
-                    {/* AI Summary */}
-                    {lead.ai_summary && (
-                        <div className="bg-gray-50 rounded-lg p-3">
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">AI Summary</p>
-                            <p className="text-sm text-slate-700 leading-relaxed">{lead.ai_summary}</p>
-                        </div>
-                    )}
+                    {/* AI Response Preview */}
+                    <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Last AI Response</p>
+                        <p className="text-sm text-slate-700 leading-relaxed">{lead.last_response}</p>
+                    </div>
 
                     {/* Status dropdown */}
                     <div>
@@ -404,39 +395,56 @@ export const AdminPage: React.FC = () => {
     }, []);
 
     // ── Computed Lead Stats ──────────────────────────────────────────────────
+    const [dashboardStats, setDashboardStats] = useState<any>(null);
 
-    const warmLeads = leads.filter(l => l.status === 'warm' || l.status === 'NEW').length;
-    const hotLeads = leads.filter(l => l.status === 'hot').length;
-    const convertedLeads = leads.filter(l => l.status === 'converted' || l.status === 'CLOSED').length;
-    const silentLeads = leads.filter(l => l.source === 'whatsapp' && daysSince(l.last_active || l.created_at) >= 7).length;
-    const pipelineValue = leads.reduce((sum, l) => sum + parsePipelineValue(l.interest || ''), 0);
-    const conversionRate = leads.length > 0 ? ((convertedLeads / leads.length) * 100).toFixed(1) : '0.0';
+    const fetchStats = useCallback(async () => {
+        try {
+            const data = await getDashboardStats();
+            setDashboardStats(data);
+        } catch (err) {
+            console.error('Failed to fetch stats:', err);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchStats();
+        const statsInterval = setInterval(fetchStats, 60000);
+        const leadsInterval = setInterval(fetchLeads, 60000);
+        return () => {
+            clearInterval(statsInterval);
+            clearInterval(leadsInterval);
+        };
+    }, [fetchStats, fetchLeads]);
+
+    // Cleanup stats mapping with new data structure
+    const warmLeads = dashboardStats?.warmLeads ?? 0;
+    const hotLeads = dashboardStats?.hotLeads ?? 0;
+    const silentLeads = dashboardStats?.silentSevenDays ?? 0;
+    const pipelineValue = dashboardStats?.pipelineValue ?? 'KES 0';
+    const convertedLeads = dashboardStats?.convertedCount ?? 0;
+    const totalLeads = dashboardStats?.totalLeads ?? 0;
+    const conversionRate = totalLeads > 0 ? ((convertedLeads / totalLeads) * 100).toFixed(1) : '0.0';
 
     // ── Filtering ────────────────────────────────────────────────────────────
 
     const STATUS_FILTERS = [
         { label: 'All', value: 'all' },
         { label: '🔥 Hot', value: 'hot' },
-        { label: '🌡️ Warm', value: 'warm' },
-        { label: '✅ Converted', value: 'converted' },
-        { label: '🥶 Cold/Silent', value: 'cold' },
+        { label: '🌡️ Warm', value: 'warm' }
     ];
 
     const filteredLeads = leads.filter(lead => {
         const matchesSearch =
-            lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (lead.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
             lead.phone.includes(searchTerm);
-        const matchesStatus = statusFilter === 'all' || lead.status === statusFilter ||
-            (statusFilter === 'converted' && lead.status === 'CLOSED') ||
-            (statusFilter === 'warm' && lead.status === 'NEW');
+        const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
         const matchesSource = sourceFilter === 'all' || lead.source === sourceFilter;
         return matchesSearch && matchesStatus && matchesSource;
     });
 
-    const updateLeadInState = (id: number, updates: Partial<Lead>) => {
-        setLeads(ls => ls.map(l => l.id === id ? { ...l, ...updates } : l));
-        if (selectedLead?.id === id) setSelectedLead(s => s ? { ...s, ...updates } : s);
+    const updateLeadInState = (phone: string, updates: Partial<Lead>) => {
+        setLeads(ls => ls.map(l => l.phone === phone ? { ...l, ...updates } : l));
+        if (selectedLead?.phone === phone) setSelectedLead(s => s ? { ...s, ...updates } : s);
     };
 
     // ── Header title map ─────────────────────────────────────────────────────
@@ -445,6 +453,7 @@ export const AdminPage: React.FC = () => {
         sitevisits: 'Site Visits',
         installments: '🔐 Installment Plans',
         whatsapp: 'WhatsApp CRM',
+        conversations: '💬 Live Conversations',
         properties: 'Property Listings',
         blog: 'Blog Management',
         broadcasts: 'Broadcasts',
@@ -456,17 +465,15 @@ export const AdminPage: React.FC = () => {
             return;
         }
 
-        const headers = ['ID', 'Name', 'Email', 'Phone', 'Source', 'Interest', 'Status', 'Date', 'Last Active'];
+        const headers = ['Phone', 'Name', 'Source', 'Status', 'Last Seen', 'Msg Count', 'Last Message'];
         const rows = filteredLeads.map(l => [
-            l.id,
-            `"${l.name.replace(/"/g, '""')}"`,
-            `"${(l.email || '').replace(/"/g, '""')}"`,
             `"${l.phone}"`,
+            `"${(l.name || '').replace(/"/g, '""')}"`,
             l.source,
-            `"${(l.interest || '').replace(/"/g, '""')}"`,
             l.status,
-            l.created_at ? new Date(l.created_at).toLocaleDateString() : '',
-            l.last_active ? new Date(l.last_active).toLocaleDateString() : ''
+            l.last_seen ? new Date(l.last_seen).toLocaleDateString() : '',
+            l.message_count,
+            `"${parseMessage(l.last_message).replace(/"/g, '""')}"`
         ]);
 
         const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -543,6 +550,7 @@ export const AdminPage: React.FC = () => {
                         { id: 'sitevisits', icon: <Calendar size={20} />, label: 'Site Visits' },
                         { id: 'installments', icon: <CreditCard size={20} />, label: 'Installments' },
                         { id: 'whatsapp', icon: <MessageSquare size={20} />, label: 'WhatsApp CRM' },
+                        { id: 'conversations', icon: <MessageSquare size={20} />, label: 'Live Conversations' },
                         { id: 'properties', icon: <Home size={20} />, label: 'Properties' },
                         { id: 'blog', icon: <FileText size={20} />, label: 'Blog Posts' },
                         { id: 'broadcasts', icon: <Radio size={20} />, label: 'Broadcasts' },
@@ -583,6 +591,7 @@ export const AdminPage: React.FC = () => {
                                 { id: 'sitevisits', icon: <Calendar size={20} />, label: 'Site Visits' },
                                 { id: 'installments', icon: <CreditCard size={20} />, label: 'Installments' },
                                 { id: 'whatsapp', icon: <MessageSquare size={20} />, label: 'WhatsApp CRM' },
+                                { id: 'conversations', icon: <MessageSquare size={20} />, label: 'Live Conversations' },
                                 { id: 'properties', icon: <Home size={20} />, label: 'Properties' },
                                 { id: 'blog', icon: <FileText size={20} />, label: 'Blog Posts' },
                                 { id: 'broadcasts', icon: <Radio size={20} />, label: 'Broadcasts' },
@@ -711,33 +720,34 @@ export const AdminPage: React.FC = () => {
                                     </thead>
                                     <tbody className="divide-y divide-gray-50">
                                         {filteredLeads.map(lead => {
-                                            const days = daysSince(lead.last_active || lead.created_at);
+                                            const days = daysSince(lead.last_seen);
+                                            const isWhatsApp = lead.source === 'whatsapp';
+                                            const displayName = isWhatsApp ? lead.name : "Website Visitor";
                                             return (
                                                 <tr
-                                                    key={lead.id}
+                                                    key={lead.phone}
                                                     onClick={() => setSelectedLead(lead)}
                                                     className="hover:bg-brand-50/40 transition duration-150 cursor-pointer group"
                                                 >
                                                     <td className="p-4">
-                                                        <div className="font-medium text-slate-800">{lead.name}</div>
-                                                        <div className="text-xs text-gray-500 flex flex-col gap-0.5 mt-1">
-                                                            {lead.email && <span className="flex items-center gap-1"><Mail size={10} />{lead.email}</span>}
-                                                            <span className="flex items-center gap-1"><Phone size={10} />{lead.phone}</span>
+                                                        <div className="font-bold text-slate-800">{displayName}</div>
+                                                        <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                                                            <Phone size={10} />{lead.phone}
                                                         </div>
                                                     </td>
                                                     <td className="p-4">
-                                                        <div className="text-sm text-slate-700 font-medium">{lead.interest}</div>
-                                                        <div className={`text-xs inline-block px-1.5 py-0.5 rounded mt-1 font-medium ${lead.source === 'whatsapp' ? 'bg-green-100 text-green-700' : 'bg-brand-50 text-brand-600'}`}>
-                                                            {lead.source === 'whatsapp' ? '📱 WhatsApp' : '🌐 Website'}
+                                                        <div className="text-sm text-slate-700 font-medium line-clamp-1 max-w-xs">{parseMessage(lead.last_message)}</div>
+                                                        <div className={`text-[10px] inline-block px-1.5 py-0.5 rounded mt-1 font-bold ${isWhatsApp ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
+                                                            {isWhatsApp ? 'WHATSAPP' : 'WEBSITE'}
                                                         </div>
                                                     </td>
                                                     <td className="p-4"><StatusBadge status={lead.status} /></td>
                                                     <td className="p-4">
-                                                        <span className={`text-sm font-medium ${days >= 7 ? 'text-red-600' : 'text-gray-500'}`}>{days}d</span>
+                                                        <span className={`text-sm font-bold ${days >= 7 ? 'text-red-600' : 'text-slate-500'}`}>{days}d</span>
                                                     </td>
-                                                    <td className="p-4 text-sm text-gray-500">
-                                                        {lead.created_at ? new Date(lead.created_at).toLocaleDateString() : '-'}
-                                                        <div className="text-xs text-gray-400">{lead.created_at ? new Date(lead.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</div>
+                                                    <td className="p-4 text-sm text-slate-500 font-medium">
+                                                        {lead.last_seen ? new Date(lead.last_seen).toLocaleDateString() : '-'}
+                                                        <div className="text-xs text-slate-400">{lead.last_seen ? new Date(lead.last_seen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</div>
                                                     </td>
                                                 </tr>
                                             );

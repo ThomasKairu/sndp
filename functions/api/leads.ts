@@ -36,29 +36,45 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     try {
         client = await getDbClient(env);
 
-        // Check if stats are requested
+        // --- Stats Logic ---
         if (url.searchParams.get('stats') === 'true') {
-            const totalLeadsQuery = await client.query('SELECT COUNT(*) FROM leads');
+            // Hot Leads: unique phones where at least one response contained [ALERT_SALES]
+            const hotLeadsQuery = await client.query(`
+                SELECT COUNT(DISTINCT phone) FROM lead_logs 
+                WHERE response ILIKE '%[ALERT_SALES]%'
+            `);
+            
+            // Warm Leads: unique phones where no response ever contained [ALERT_SALES]
+            const warmLeadsQuery = await client.query(`
+                SELECT COUNT(DISTINCT phone) FROM lead_logs 
+                WHERE phone NOT IN (
+                    SELECT DISTINCT phone FROM lead_logs 
+                    WHERE response ILIKE '%[ALERT_SALES]%'
+                )
+            `);
 
-            // Format today's date for comparison (YYYY-MM-DD)
-            const today = new Date().toISOString().split('T')[0];
-            const newTodayQuery = await client.query('SELECT COUNT(*) FROM leads WHERE DATE(created_at) = $1', [today]);
+            // Silent 7+ days: unique phones where MAX(timestamp) < NOW() - 7 days
+            const silentQuery = await client.query(`
+                SELECT COUNT(*) FROM (
+                    SELECT phone FROM lead_logs 
+                    GROUP BY phone 
+                    HAVING MAX(timestamp) < NOW() - INTERVAL '7 days'
+                ) as silents
+            `);
 
-            // Action required: Status 'new'
-            const actionRequiredQuery = await client.query("SELECT COUNT(*) FROM leads WHERE status = 'new'");
+            // Converted: count of records in installment_plans
+            const convertedQuery = await client.query('SELECT COUNT(*) FROM installment_plans');
 
-            // Conversion: Status 'closed' / Total
-            const closedQuery = await client.query("SELECT COUNT(*) FROM leads WHERE status = 'closed'");
-
-            const total = parseInt(totalLeadsQuery.rows[0].count);
-            const closed = parseInt(closedQuery.rows[0].count);
-            const conversionRate = total > 0 ? Math.round((closed / total) * 100) : 0;
+            const hotCount = parseInt(hotLeadsQuery.rows[0].count);
+            const pipelineValue = hotCount * 1500000;
 
             const stats = {
-                totalLeads: totalLeadsQuery.rows[0].count,
-                newToday: newTodayQuery.rows[0].count,
-                actionRequired: actionRequiredQuery.rows[0].count,
-                conversionRate: conversionRate + '%'
+                totalLeads: hotCount + parseInt(warmLeadsQuery.rows[0].count),
+                hotLeads: hotCount,
+                warmLeads: warmLeadsQuery.rows[0].count,
+                silentSevenDays: silentQuery.rows[0].count,
+                pipelineValue: 'KES ' + pipelineValue.toLocaleString(),
+                convertedCount: convertedQuery.rows[0].count
             };
 
             await client.end();
@@ -67,8 +83,22 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
             });
         }
 
-        // Schema: id, name, phone, interest, ai_summary, source, status
-        const result = await client.query('SELECT * FROM leads ORDER BY id DESC');
+        // --- Regular Leads List ---
+        const result = await client.query(`
+            SELECT 
+              phone,
+              MAX(timestamp) as last_seen,
+              COUNT(*) as message_count,
+              (SELECT message FROM lead_logs l2 WHERE l2.phone = l.phone ORDER BY timestamp DESC LIMIT 1) as last_message,
+              (SELECT response FROM lead_logs l2 WHERE l2.phone = l.phone ORDER BY timestamp DESC LIMIT 1) as last_response,
+              CASE 
+                WHEN EXISTS (SELECT 1 FROM lead_logs l3 WHERE l3.phone = l.phone AND l3.response ILIKE '%[ALERT_SALES]%') THEN 'hot'
+                ELSE 'warm'
+              END as status
+            FROM lead_logs l
+            GROUP BY phone
+            ORDER BY last_seen DESC
+        `);
 
         await client.end();
         return new Response(JSON.stringify(result.rows), {

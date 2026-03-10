@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import {
     Lead, getLeads, updateLead, getConversationHistory,
-    sendManualFollowup, ConversationMessage
+    sendManualFollowup, ConversationMessage, parseMessage
 } from '../../services/dataService';
 
 // ---- Toast Hook ----
@@ -43,40 +43,40 @@ const STATUS_OPTIONS = ['NEW', 'warm', 'hot', 'converted', 'cold', 'CLOSED'];
 
 // ---- Lead List Item ----
 const LeadItem = ({ lead, selected, onClick }: { lead: Lead; selected: boolean; onClick: () => void }) => {
-    const days = daysSince(lead.last_active || lead.created_at);
+    const days = daysSince(lead.last_seen);
     return (
         <button
             onClick={onClick}
             className={`w-full text-left px-4 py-3 flex items-start gap-3 border-b border-gray-100 hover:bg-brand-50 transition ${selected ? 'bg-brand-50 border-l-4 border-l-brand-500' : ''}`}
         >
-            <div className="h-10 w-10 rounded-full bg-slate-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                {initials(lead.name)}
+            <div className="h-10 w-10 rounded-xl bg-brand-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-sm">
+                {initials(lead.name || lead.phone)}
             </div>
             <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                    <p className="font-semibold text-slate-800 text-sm truncate">{lead.name}</p>
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${statusColor(lead.status)}`}>{lead.status}</span>
+                    <p className="font-bold text-slate-800 text-sm truncate">{lead.name || lead.phone}</p>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${statusColor(lead.status)}`}>{lead.status?.toUpperCase()}</span>
                 </div>
-                <p className="text-xs text-gray-500 truncate">{lead.phone}</p>
-                <p className="text-xs text-gray-400 truncate mt-0.5">{lead.ai_summary || 'No summary'}</p>
-                {days >= 7 && (
-                    <span className="inline-flex items-center gap-1 text-[10px] text-red-600 font-semibold mt-0.5">
-                        <AlertCircle size={9} /> {days}d silent
+                <p className="text-xs text-slate-500 truncate mt-0.5">{parseMessage(lead.last_message)}</p>
+                <div className="flex items-center gap-2 mt-1">
+                    <span className={`text-[10px] font-medium ${days >= 7 ? 'text-red-600' : 'text-gray-400'}`}>
+                        {days}d silent
                     </span>
-                )}
+                    {lead.status === 'hot' && <span className="bg-red-50 text-red-600 text-[9px] font-bold px-1 rounded flex items-center gap-0.5">🔥 HOT</span>}
+                </div>
             </div>
         </button>
     );
 };
 
 // ---- Chat Bubble ----
-const ChatBubble = ({ msg }: { msg: ConversationMessage }) => {
+const ChatBubble: React.FC<{ msg: ConversationMessage }> = ({ msg }) => {
     const isUser = msg.role === 'user';
     return (
-        <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-3`}>
-            <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${isUser ? 'bg-green-500 text-white rounded-br-sm' : 'bg-gray-100 text-slate-800 rounded-bl-sm'}`}>
+        <div className={`flex ${isUser ? 'justify-start' : 'justify-end'} mb-3`}>
+            <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${isUser ? 'bg-gray-100 text-slate-800 rounded-bl-sm' : 'bg-green-600 text-white rounded-br-sm'}`}>
                 <p>{msg.message}</p>
-                <p className={`text-[10px] mt-1 ${isUser ? 'text-green-100' : 'text-gray-400'}`}>
+                <p className={`text-[10px] mt-1 ${isUser ? 'text-gray-400' : 'text-green-100'}`}>
                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </p>
             </div>
@@ -101,22 +101,12 @@ export const WhatsAppCRMTab: React.FC = () => {
     const fetchLeads = useCallback(async () => {
         setLoading(true);
         try {
-            const API_BASE = import.meta.env.VITE_API_BASE || '';
-            const secret = sessionStorage.getItem('admin_secret') || '';
-            // Try dedicated endpoint first, fall back to /api/leads filtered
-            let data: Lead[] = [];
-            try {
-                const res = await fetch(`${API_BASE}/api/whatsapp-leads`, { headers: { 'x-internal-secret': secret } });
-                if (res.ok) data = await res.json();
-                else throw new Error('endpoint not found');
-            } catch {
-                const all = await getLeads();
-                data = all.filter(l => l.source === 'whatsapp');
-            }
-            // Sort most recent first
-            data.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+            const all = await getLeads();
+            // Filter: must match 254... pattern and not be undefined/anon_web
+            const data = all.filter(l => /^254\d{9}$/.test(l.phone));
             setLeads(data);
-        } catch {
+        } catch (err) {
+            console.error('Error fetching leaks:', err);
             setLeads([]);
         } finally {
             setLoading(false);
@@ -131,7 +121,12 @@ export const WhatsAppCRMTab: React.FC = () => {
         setConvLoading(true);
         setConversation([]);
         getConversationHistory(selectedLead.phone).then(data => {
-            setConversation(data);
+            const flattened: ConversationMessage[] = [];
+            data.forEach((log: any) => {
+                if (log.message) flattened.push({ role: 'user', message: log.message, created_at: log.timestamp });
+                if (log.response) flattened.push({ role: 'assistant', message: log.response, created_at: log.timestamp });
+            });
+            setConversation(flattened);
             setConvLoading(false);
         });
     }, [selectedLead]);
@@ -140,9 +135,9 @@ export const WhatsAppCRMTab: React.FC = () => {
         if (!selectedLead) return;
         setUpdatingStatus(true);
         try {
-            const updated = await updateLead(selectedLead.id, { status: newStatus });
-            setSelectedLead({ ...selectedLead, status: newStatus });
-            setLeads(ls => ls.map(l => l.id === selectedLead.id ? { ...l, status: newStatus } : l));
+            await updateLead(selectedLead.phone, { status: newStatus as any });
+            setSelectedLead({ ...selectedLead, status: newStatus as any });
+            setLeads(ls => ls.map(l => l.phone === selectedLead.phone ? { ...l, status: newStatus as any } : l));
             showToast('Status updated!', 'success');
         } catch {
             showToast('Failed to update status.', 'error');
@@ -204,7 +199,7 @@ export const WhatsAppCRMTab: React.FC = () => {
                             <React.Fragment key={lead.id}>
                                 <LeadItem
                                     lead={lead}
-                                    selected={selectedLead?.id === lead.id}
+                                    selected={selectedLead?.phone === lead.phone}
                                     onClick={() => setSelectedLead(lead)}
                                 />
                             </React.Fragment>
@@ -232,8 +227,8 @@ export const WhatsAppCRMTab: React.FC = () => {
                                 >
                                     <ChevronDown className="rotate-90" size={20} />
                                 </button>
-                                <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-brand-700 flex items-center justify-center text-white font-bold text-xs md:text-sm">
-                                    {initials(selectedLead.name)}
+                                <div className="h-8 w-8 md:h-10 md:w-10 rounded-xl bg-brand-700 flex items-center justify-center text-white font-bold text-xs md:text-sm shadow-md">
+                                    {initials(selectedLead.name || selectedLead.phone)}
                                 </div>
                                 <div>
                                     <p className="font-bold text-slate-800 text-sm md:text-base">{selectedLead.name}</p>
@@ -270,9 +265,8 @@ export const WhatsAppCRMTab: React.FC = () => {
 
                         {/* Lead Info Bar */}
                         <div className="bg-white border-b border-gray-100 px-4 py-2 flex flex-wrap gap-x-6 gap-y-1 text-[10px] md:text-xs text-gray-500">
-                            <span><b className="text-slate-700">Interest:</b> {selectedLead.interest || '—'}</span>
-                            <span><b className="text-slate-700">Days silent:</b> {daysSince(selectedLead.last_active || selectedLead.created_at)}d</span>
-                            {selectedLead.ai_summary && <span className="truncate flex-1 min-w-full sm:min-w-0"><b className="text-slate-700">AI Summary:</b> {selectedLead.ai_summary}</span>}
+                            <span><b className="text-slate-700">Days silent:</b> {daysSince(selectedLead.last_seen)}d</span>
+                            <span className="truncate flex-1 min-w-full sm:min-w-0"><b className="text-slate-700">Last seen:</b> {new Date(selectedLead.last_seen).toLocaleString()}</span>
                         </div>
 
                         {/* Conversation */}
