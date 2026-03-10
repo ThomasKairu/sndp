@@ -23,13 +23,17 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     try {
         client = await getDbClient(env);
         const result = await client.query('SELECT * FROM installment_plans ORDER BY id DESC');
-        await client.end();
         return new Response(JSON.stringify(result.rows), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
     } catch (err: any) {
+        console.error('Installment plans GET error:', err);
+        return new Response(JSON.stringify({ error: err.message }), { 
+            status: 500, 
+            headers: corsHeaders 
+        });
+    } finally {
         if (client) await client.end();
-        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
     }
 };
 
@@ -47,14 +51,16 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
     }
 
+    let client;
     try {
         const body = await request.json() as any;
-        const client = await getDbClient(env);
+        client = await getDbClient(env);
         
         // Modal needs: Client Name, Phone, Property (dropdown), Total Amount (KES), Installment Count, First Due Date, Notes.
-        // Calculate installment_amount = total_amount / installment_count
         const { client_name, phone, property_name, total_amount, installment_count, first_due_date, notes } = body;
-        const installment_amount = total_amount / installment_count;
+        
+        // Fix: Round installment_amount to 2 decimal places to match NUMERIC(12, 2)
+        const installment_amount = Math.round((total_amount / installment_count) * 100) / 100;
         
         const query = `
             INSERT INTO installment_plans (
@@ -67,16 +73,32 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         `;
         
         const result = await client.query(query, [
-            client_name, phone, property_name, total_amount, 
-            installment_count, installment_amount, first_due_date, notes
+            client_name, 
+            phone, 
+            property_name, 
+            total_amount, 
+            installment_count, 
+            installment_amount, 
+            first_due_date, 
+            notes
         ]);
         
-        await client.end();
         return new Response(JSON.stringify(result.rows[0]), {
+            status: 201,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
     } catch (err: any) {
-        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
+        console.error('Installment plans POST error:', err);
+        return new Response(JSON.stringify({ 
+            error: err.message,
+            detail: err.detail,
+            hint: err.hint
+        }), { 
+            status: 500, 
+            headers: corsHeaders 
+        });
+    } finally {
+        if (client) await client.end();
     }
 };
 
@@ -96,9 +118,10 @@ export const onRequestPut: PagesFunction<Env> = async (context) => {
         return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
     }
 
+    let client;
     try {
         const body = await request.json() as any;
-        const client = await getDbClient(env);
+        client = await getDbClient(env);
         
         // Build dynamic UPDATE query
         const keys = Object.keys(body).filter(k => k !== 'id');
@@ -108,12 +131,17 @@ export const onRequestPut: PagesFunction<Env> = async (context) => {
         const query = `UPDATE installment_plans SET ${setString} WHERE id = $${keys.length + 1} RETURNING *`;
         const result = await client.query(query, [...values, id]);
         
-        await client.end();
         return new Response(JSON.stringify(result.rows[0]), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
     } catch (err: any) {
-        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
+        console.error('Installment plans PUT error:', err);
+        return new Response(JSON.stringify({ error: err.message }), { 
+            status: 500, 
+            headers: corsHeaders 
+        });
+    } finally {
+        if (client) await client.end();
     }
 };
 

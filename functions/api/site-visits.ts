@@ -24,13 +24,17 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     try {
         client = await getDbClient(env);
         const result = await client.query('SELECT * FROM site_visits ORDER BY visit_date ASC');
-        await client.end();
         return new Response(JSON.stringify(result.rows), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
     } catch (err: any) {
+        console.error('Site visits GET error:', err);
+        return new Response(JSON.stringify({ error: err.message }), { 
+            status: 500, 
+            headers: corsHeaders 
+        });
+    } finally {
         if (client) await client.end();
-        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
     }
 };
 
@@ -48,35 +52,62 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
     }
 
+    let client;
     try {
         const body = await request.json() as any;
-        const { client_name, phone, property_name, visit_date, visit_time, notes, status } = body;
+        // Frontend sends: { customer_name, sender_id: phone, property_name, visit_date: ISO, visit_day, notes, status }
+        const { 
+            customer_name, 
+            sender_id, // Phone number
+            property_name, 
+            visit_date, // ISO timestamp
+            visit_day, 
+            notes, 
+            status 
+        } = body;
 
-        const client = await getDbClient(env);
+        client = await getDbClient(env);
         const query = `
-            INSERT INTO site_visits (customer_name, sender_id, property_name, visit_date, visit_day, status, created_at)
-            VALUES ($1, $2, $3, $4, $5, $6, NOW())
+            INSERT INTO site_visits (
+                customer_name, 
+                sender_id, 
+                property_name, 
+                visit_date, 
+                visit_day, 
+                notes,
+                status, 
+                created_at
+            )
+            VALUES ($1, $2, $3, $4::timestamptz, $5, $6, $7, NOW())
             RETURNING *
         `;
-        // Mapping fields to match existing table schema if possible, or following user's field names
-        // User's fields: client_name, phone, property_name, visit_date, visit_time, notes, status
-        // Table schema inferred from SiteVisitsTab.tsx: id, sender_id, customer_name, property_name, visit_day, visit_date, reminder_24hr_sent, reminder_morning_sent, status, created_at
         
         const result = await client.query(query, [
-            client_name, 
-            phone, 
+            customer_name || 'Anonymous', 
+            sender_id || '', // sender_id is NOT NULL
             property_name, 
-            visit_date, // Full timestamp
-            visit_date.split('T')[0], // visit_day
+            visit_date, 
+            visit_day || (visit_date ? visit_date.split('T')[0] : null),
+            notes || null,
             status || 'scheduled'
         ]);
         
-        await client.end();
         return new Response(JSON.stringify(result.rows[0]), {
+            status: 201,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
     } catch (err: any) {
-        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
+        console.error('Site visits POST error:', err);
+        return new Response(JSON.stringify({ 
+            error: err.message,
+            detail: err.detail,
+            hint: err.hint
+        }), { 
+            status: 500, 
+            headers: corsHeaders 
+        });
+    } finally {
+        if (client) await client.end();
     }
 };
 
@@ -96,9 +127,10 @@ export const onRequestPut: PagesFunction<Env> = async (context) => {
         return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
     }
 
+    let client;
     try {
         const body = await request.json() as any;
-        const client = await getDbClient(env);
+        client = await getDbClient(env);
         
         let query = 'UPDATE site_visits SET ';
         const params: any[] = [];
@@ -113,12 +145,17 @@ export const onRequestPut: PagesFunction<Env> = async (context) => {
         params.push(id);
         
         const result = await client.query(query, params);
-        await client.end();
         return new Response(JSON.stringify(result.rows[0]), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
     } catch (err: any) {
-        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
+        console.error('Site visits PUT error:', err);
+        return new Response(JSON.stringify({ error: err.message }), { 
+            status: 500, 
+            headers: corsHeaders 
+        });
+    } finally {
+        if (client) await client.end();
     }
 };
 
