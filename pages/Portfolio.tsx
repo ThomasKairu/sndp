@@ -1,29 +1,30 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Play } from 'lucide-react';
+import { ResponsiveImage } from '../components/ResponsiveImage';
 
 const PORTFOLIO_ITEMS = [
   {
     title: 'Baraka Phase 1 Matuu',
-    image: '/phase 1.webp',
+    image: '/v2/phase 1.webp',
     families: 65,
     description: 'A pioneer project in Matuu that set the standard for affordable community living.'
   },
   {
     title: 'Baraka Phase 2 Matuu',
-    image: '/phase 2.webp',
+    image: '/v2/phase 2.webp',
     families: 78,
     description: 'Expanding our footprint with premium amenities and ready-to-build plots.'
   },
   {
     title: 'Baraka Phase 3 Matuu',
-    image: '/phase 3.webp',
+    image: '/v2/phase 3.webp',
     families: 92,
     description: 'Continuing the legacy of trust with rapid title deed processing.'
   },
   {
     title: 'Baraka Phase 4 Matuu',
-    image: '/phase 4.webp',
+    image: '/v2/phase 4.webp',
     families: 110,
     description: 'Our most ambitious phase yet, featuring gated community concepts.'
   }
@@ -49,7 +50,7 @@ export const PortfolioPage: React.FC = () => (
       <link rel="canonical" href="https://provisionlands.co.ke/portfolio" />
       <meta property="og:title" content="Our Portfolio - Provision Land Limited | Baraka Phases Matuu" />
       <meta property="og:description" content="See our track record of success with Baraka Phase 1-4 in Matuu. Hundreds of families settled." />
-      <meta property="og:image" content="/phase 4.png" />
+      <meta property="og:image" content="/v2/phase 4.webp" />
     </Helmet>
 
     <div className="container mx-auto px-4 py-16">
@@ -63,7 +64,7 @@ export const PortfolioPage: React.FC = () => (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
         {PORTFOLIO_ITEMS.map((item, index) => (
           <div key={index} className="group relative overflow-hidden rounded-xl shadow-lg cursor-pointer h-[400px]">
-            <img
+            <ResponsiveImage
               src={item.image}
               alt={item.title}
               className="w-full h-full object-cover transition transform group-hover:scale-110 duration-700"

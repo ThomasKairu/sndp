@@ -36,7 +36,7 @@ export async function getProperties(): Promise<Property[]> {
         if (response.ok) {
             try {
                 const data = await response.json();
-                if (Array.isArray(data) && data.length > 0) return data;
+                if (Array.isArray(data)) return data;
                 console.warn("API Error: Response data is empty or not an array:", data);
             } catch (e) {
                 console.error("API Error: Failed to parse JSON:", e);
@@ -134,7 +134,7 @@ export async function getBlogPosts(): Promise<BlogPost[]> {
         const response = await fetch(`${API_BASE}/api/blog-posts`);
         if (response.ok) {
             const data = await response.json();
-            if (Array.isArray(data) && data.length > 0) return data;
+            if (Array.isArray(data)) return data;
         }
     } catch (err) {
         console.warn('Failed to fetch blog posts from API');

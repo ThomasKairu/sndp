@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getBlogPosts } from '../services/dataService'; // Use data service
 import { BlogPost } from '../types';
 import { Calendar, ArrowRight, ArrowLeft, Clock, Tag, Loader2 } from 'lucide-react';
+import { ResponsiveImage } from '../components/ResponsiveImage';
 
 // Helper to safely escape strings for JSON-LD embedding
 const sanitizeJsonString = (str: string): string =>
@@ -114,7 +115,7 @@ export const NewsPage: React.FC = () => {
                 "name": "Provision Land & Properties Ltd",
                 "logo": {
                   "@type": "ImageObject",
-                  "url": "https://provisionlands.co.ke/logo.png"
+                  "url": "https://provisionlands.co.ke/v2/web-app-manifest-512x512.webp"
                 }
               },
               "description": "${sanitizeJsonString(selectedPost.excerpt)}"
@@ -124,7 +125,7 @@ export const NewsPage: React.FC = () => {
 
         {/* Article Header Image */}
         <div className="relative h-[400px] w-full">
-          <img src={selectedPost.image} alt={selectedPost.title} className="w-full h-full object-cover" />
+          <ResponsiveImage src={selectedPost.image} alt={selectedPost.title} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-black/50"></div>
           <div className="absolute bottom-0 left-0 w-full p-8 md:p-16 text-white container mx-auto">
             <button
@@ -255,7 +256,7 @@ export const NewsPage: React.FC = () => {
           {posts.map(post => (
             <div key={post.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition group flex flex-col h-full">
               <div className="h-48 overflow-hidden">
-                <img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
+                <ResponsiveImage src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
               </div>
               <div className="p-6 flex flex-col flex-grow">
                 <div className="flex items-center text-xs text-gray-500 mb-3 gap-4">

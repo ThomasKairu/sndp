@@ -113,7 +113,7 @@ export const ContactPage: React.FC = () => {
                 "@type": "LocalBusiness",
                 "@id": "https://provisionlands.co.ke/#localbusiness",
                 "name": "Provision Land & Properties Ltd",
-                "image": "https://provisionlands.co.ke/web-app-manifest-512x512.png",
+                "image": "https://provisionlands.co.ke/v2/web-app-manifest-512x512.webp",
                 "url": "https://provisionlands.co.ke",
                 "telephone": "+254797331355",
                 "email": "info@provisionlands.co.ke",

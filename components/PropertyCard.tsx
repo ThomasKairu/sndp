@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Property } from '../types';
 import { MapPin, Maximize2, Loader } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { ResponsiveImage } from './ResponsiveImage';
 
 interface FeaturedPropertyCardProps {
   property: Property;
@@ -40,8 +41,7 @@ const FeaturedPropertyCardBase: React.FC<FeaturedPropertyCardProps> = ({ propert
 
 
         {/* Actual Image */}
-        <img
-          ref={imgRef}
+        <ResponsiveImage
           src={property.image}
           alt={property.title}
           width="400"
@@ -138,8 +138,7 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
         </div>
 
         {/* Actual Image */}
-        <img
-          ref={imgRef}
+        <ResponsiveImage
           src={property.image}
           alt={property.title}
           width="400"

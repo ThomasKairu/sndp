@@ -2,6 +2,7 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { TEAM, TESTIMONIALS } from '../constants';
 import { Target, Eye, Award } from 'lucide-react';
+import { ResponsiveImage } from '../components/ResponsiveImage';
 
 export const AboutPage: React.FC = () => {
   return (
@@ -45,7 +46,7 @@ export const AboutPage: React.FC = () => {
                     "name": "Stephen Ndung'u",
                     "jobTitle": "CEO & Founder",
                     "description": "Leading Provision Land & Properties Ltd with a promise to deliver genuinely.",
-                    "image": "https://provisionlands.co.ke/Stephen%20Ndung'u.webp",
+                    "image": "https://provisionlands.co.ke/v2/Stephen%20Ndung'u.webp",
                     "worksFor": {"@id": "https://provisionlands.co.ke/#organization"}
                   },
                   {
@@ -53,7 +54,7 @@ export const AboutPage: React.FC = () => {
                     "name": "Sales Team",
                     "jobTitle": "Customer Relations",
                     "description": "Our dedicated team is ready to take you for site visits daily.",
-                    "image": "https://provisionlands.co.ke/Sales%20Team.webp",
+                    "image": "https://provisionlands.co.ke/v2/Sales%20Team.webp",
                     "worksFor": {"@id": "https://provisionlands.co.ke/#organization"}
                   }
                 ],
@@ -133,7 +134,7 @@ export const AboutPage: React.FC = () => {
             {TEAM.map(member => (
               <div key={member.id} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition group">
                 <div className="h-64 overflow-hidden">
-                  <img
+                  <ResponsiveImage
                     src={member.image}
                     alt={member.name}
                     className="w-full h-full object-cover object-top group-hover:scale-105 transition duration-500"
@@ -162,7 +163,7 @@ export const AboutPage: React.FC = () => {
                 </div>
                 <p className="text-gray-600 italic mb-6 relative z-10 pt-4">{t.content}</p>
                 <div className="flex items-center gap-3 border-t border-gray-100 pt-4">
-                  <img src={t.avatar} alt={t.name} className="w-10 h-10 rounded-full object-cover" />
+                  <ResponsiveImage src={t.avatar} alt={t.name} className="w-10 h-10 rounded-full object-cover" />
                   <div>
                     <p className="font-bold text-sm text-slate-900">{t.name}</p>
                     <p className="text-xs text-gray-500">{t.role}</p>

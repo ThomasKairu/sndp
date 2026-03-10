@@ -39,7 +39,7 @@ export const BlogPostsTab: React.FC = () => {
                     date: formData.date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                 } as BlogPost;
                 await createBlogPost(newPost);
-                setPosts(prev => [newPost, ...prev]);
+                await loadPosts();
             }
             setIsModalOpen(false);
             setEditingId(null);

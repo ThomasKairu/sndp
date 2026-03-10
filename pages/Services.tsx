@@ -1,6 +1,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { SERVICES } from '../constants';
+import { ResponsiveImage } from '../components/ResponsiveImage';
 
 export const ServicesPage: React.FC = () => (
     <div className="bg-gray-50 min-h-screen">
@@ -66,7 +67,7 @@ export const ServicesPage: React.FC = () => (
 
         <div className="relative bg-brand-900 text-white py-20 text-center">
             <div className="absolute inset-0">
-                <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1600&q=80" className="w-full h-full object-cover opacity-20" alt="Background" />
+                <ResponsiveImage src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1600&q=80" className="w-full h-full object-cover opacity-20" alt="Background" />
                 <div className="absolute inset-0 bg-gradient-to-t from-gray-50 via-transparent to-transparent"></div>
             </div>
             <h1 className="relative z-10 text-4xl font-serif font-bold mb-2">Real Estate Solutions</h1>
@@ -79,7 +80,7 @@ export const ServicesPage: React.FC = () => (
                 {SERVICES.map((service, idx) => (
                     <div key={service.id} className={`flex flex-col md:flex-row items-center gap-8 ${idx % 2 === 1 ? 'md:flex-row-reverse' : ''}`}>
                         <div className="flex-1">
-                            <img src={`https://images.unsplash.com/photo-${idx === 0 ? '1629016943332-8bd56635e076' : idx === 1 ? '1554224155-8d04cb21cd6c' : idx === 2 ? '1564013799919-ab600027ffc6' : '1542744173-8e7e53415bb0'}?auto=format&fit=crop&w=800&q=80`} alt={service.title} className="rounded-2xl shadow-xl w-full" />
+                            <ResponsiveImage src={`https://images.unsplash.com/photo-${idx === 0 ? '1629016943332-8bd56635e076' : idx === 1 ? '1554224155-8d04cb21cd6c' : idx === 2 ? '1564013799919-ab600027ffc6' : '1542744173-8e7e53415bb0'}?auto=format&fit=crop&w=800&q=80`} alt={service.title} className="rounded-2xl shadow-xl w-full" />
                         </div>
                         <div className="flex-1 space-y-4">
                             <div className="w-12 h-12 bg-brand-100 rounded-full flex items-center justify-center text-brand-600 font-bold text-xl">

@@ -1,4 +1,3 @@
-
 import { getDbClient, DbEnv, SECURITY_HEADERS } from '../utils/db';
 
 interface Env extends DbEnv {
@@ -10,7 +9,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     const url = new URL(request.url);
     const method = request.method;
 
-    // CORS + Security - Allow naked and www domains
+    // CORS + Security
     const origin = request.headers.get('Origin');
     const allowedOrigins = ['https://provisionlands.co.ke', 'https://www.provisionlands.co.ke'];
     const corsHeaders = {
@@ -24,128 +23,105 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         return new Response(null, { headers: corsHeaders });
     }
 
-    let client;
-    try {
-        client = await getDbClient(env);
-    } catch (err) {
-        console.error("DB Connection Error:", err);
-        return new Response(JSON.stringify({ error: "Database Service Unavailable" }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-    }
-
-    try {
-        // --- 1. GET requests (Public) ---
-        if (method === 'GET') {
-            const result = await client.query('SELECT * FROM blog_posts ORDER BY date DESC');
-            await client.end();
-            return new Response(JSON.stringify(result.rows), {
-                status: 200,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            });
-        }
-
-        // --- 2. Write requests (Protected) ---
+    // Auth Check for mutations
+    if (['POST', 'PUT', 'DELETE'].includes(method)) {
         const secret = request.headers.get('x-internal-secret');
         const internalSecret = env.N8N_APP_SECRET?.trim();
         if (!secret || secret.trim() !== internalSecret) {
-            await client.end();
             return new Response(JSON.stringify({ error: "Unauthorized" }), {
                 status: 401,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
         }
+    }
 
-        const body = await request.json() as any;
+    let client;
+    try {
+        client = await getDbClient(env);
 
-        // Whitelist allowed columns to prevent SQL Injection
-        const ALLOWED_COLUMNS = ['title', 'excerpt', 'content', 'date', 'category', 'image'];
-
+        if (method === 'GET') {
+            const result = await client.query('SELECT * FROM blog_posts ORDER BY created_at DESC');
+            await client.end();
+            return new Response(JSON.stringify(result.rows), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+        }
 
         if (method === 'POST') {
+            const body = await request.json() as any;
+            let { id, title, excerpt, content, category, image, date, author } = body;
+            
+            if (!id && title) {
+                id = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            }
+            if (!date) {
+                date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            }
+
             const query = `
-                INSERT INTO blog_posts (id, title, excerpt, content, date, category, image)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                INSERT INTO blog_posts (id, title, excerpt, content, category, image, date, author)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 RETURNING *
             `;
-            const values = [
-                body.id || crypto.randomUUID(),
-                body.title, body.excerpt, body.content,
-                body.date, body.category, body.image
-            ];
-
-            const result = await client.query(query, values);
+            const params = [id, title, excerpt, content, category || 'News', image, date, author || 'Provision Team'];
+            
+            const result = await client.query(query, params);
             await client.end();
-
             return new Response(JSON.stringify(result.rows[0]), {
-                status: 200,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
         }
 
         if (method === 'PUT') {
-            const id = url.searchParams.get('id');
-            if (!id) throw new Error("Missing ID");
+            const idParam = url.searchParams.get('id');
+            if (!idParam) throw new Error("Missing ID parameter");
 
-            // Secure dynamic update using whitelist
+            const body = await request.json() as any;
+            const { title, excerpt, content, category, image, date, author } = body;
+            
             const updates: string[] = [];
-            const values: any[] = [id];
-            let paramCounter = 2; // Start from $2 (id is $1)
+            const params: any[] = [];
+            let i = 1;
 
-            Object.keys(body).forEach(key => {
-                if (ALLOWED_COLUMNS.includes(key)) {
-                    updates.push(`${key} = $${paramCounter}`);
-                    values.push(body[key]);
-                    paramCounter++;
+            const fields = { title, excerpt, content, category, image, date, author };
+            for (const [key, value] of Object.entries(fields)) {
+                if (value !== undefined) {
+                    updates.push(`${key} = $${i++}`);
+                    params.push(value);
                 }
-            });
-
-            if (updates.length === 0) {
-                await client.end();
-                return new Response(JSON.stringify({ error: "No valid fields to update" }), {
-                    status: 400,
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-                });
             }
+            
+            updates.push(`updated_at = NOW()`);
+            params.push(idParam);
 
-            const query = `UPDATE blog_posts SET ${updates.join(', ')} WHERE id = $1 RETURNING *`;
-
-            const result = await client.query(query, values);
+            const query = `UPDATE blog_posts SET ${updates.join(', ')} WHERE id = $${i} RETURNING *`;
+            const result = await client.query(query, params);
+            
             await client.end();
-
             return new Response(JSON.stringify(result.rows[0]), {
-                status: 200,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
         }
 
         if (method === 'DELETE') {
-            const id = url.searchParams.get('id');
-            if (!id) {
-                await client.end();
-                return new Response(JSON.stringify({ error: "Missing ID" }), {
-                    status: 400,
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-                });
-            }
+            const idParam = url.searchParams.get('id');
+            if (!idParam) throw new Error("Missing ID parameter");
 
-            await client.query('DELETE FROM blog_posts WHERE id = $1', [id]);
+            await client.query('DELETE FROM blog_posts WHERE id = $1', [idParam]);
             await client.end();
             return new Response(JSON.stringify({ success: true }), {
-                status: 200,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
         }
 
-    } catch (err) {
-        console.error("API Error:", err);
-        try { await client?.end(); } catch { }
-        return new Response(JSON.stringify({ error: "Internal Server Error" }), {
+        return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
+
+    } catch (err: any) {
+        console.error(err);
+        if (client) await client.end();
+        return new Response(JSON.stringify({ error: err.message || "Internal Server Error" }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
     }
-
-    return new Response(null, { status: 405 });
 };

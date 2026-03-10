@@ -43,7 +43,7 @@ export const PropertiesTab: React.FC = () => {
                     images: formData.image ? [formData.image] : []
                 } as Property;
                 await createProperty(newProperty);
-                setProperties(prev => [newProperty, ...prev]);
+                await loadProperties();
             }
             setIsModalOpen(false);
             setEditingId(null);

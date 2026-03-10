@@ -10,7 +10,7 @@ export const COMPANY_INFO = {
   address: "Clairbourn Towers, 5th Fl, Thika, Kenya", // Updated from flyer
   slogan: "We Promise and Deliver Genuinely",
   facebook: "https://facebook.com/profile.php?id=61588103512394",
-  twitter: "/",
+  twitter: "/v2/",
   instagram: "https://www.instagram.com/provision_land_properties_ltd/",
   youtube: "https://www.youtube.com/@ProvisionLandPropertiesLtd/videos",
   linkedin: "https://linkedin.com/in/provision-land-and-properties-54502a2a2",
@@ -62,8 +62,8 @@ export const PROPERTIES: Property[] = [
     type: 'Land',
     size: '0.5 Acre',
     description: 'A prime and spacious parcel ideal for residential development, farming, or future investment. Located near the shopping center with beautiful neighborhood and easy access.',
-    image: '/Prime half Acre in Kiharu.webp',
-    images: ['/Prime half Acre in Kiharu.webp'],
+    image: '/v2/Prime half Acre in Kiharu.webp',
+    images: ['/v2/Prime half Acre in Kiharu.webp'],
     features: ['Near Shopping Center', 'Water Available', 'Electricity', 'Fertile Soil'],
     status: 'For Sale'
   },
@@ -75,8 +75,8 @@ export const PROPERTIES: Property[] = [
     type: 'Land',
     size: '1 Acre',
     description: 'Ideal for building, farming, or residential development. Only 10 minutes drive from Thika town (50 bob fare). A rare lifetime opportunity in a developed area.',
-    image: "/1 Acre at Mang'u.webp",
-    images: ["/1 Acre at Mang'u.webp"],
+    image: "/v2/1 Acre at Mang'u.webp",
+    images: ["/v2/1 Acre at Mang'u.webp"],
     features: ['10 Mins from Thika', 'All Documents Available', 'Residential/Farming'],
     status: 'For Sale'
   },
@@ -88,8 +88,8 @@ export const PROPERTIES: Property[] = [
     type: 'Land',
     size: '50x100 ft',
     description: 'Genuine plots just 10 minutes from Makutano Junction. Near Kamweli Shopping Centre and schools. Beaconed with 9-meter wide access roads.',
-    image: '/Sagana Makutano Plots.webp',
-    images: ['/Sagana Makutano Plots.webp'],
+    image: '/v2/Sagana Makutano Plots.webp',
+    images: ['/v2/Sagana Makutano Plots.webp'],
     features: ['Ready Title Deeds', 'Water & Electricity', 'Fully Fenced', 'Gated'],
     status: 'For Sale'
   },
@@ -101,8 +101,8 @@ export const PROPERTIES: Property[] = [
     type: 'Land',
     size: '50x100 ft',
     description: 'Affordable plots in Ithanga-Maragua, only 30 minutes from Thika. Ideal for home and farming. Ready title deeds.',
-    image: "/Ithanga Murang'a Plots.webp",
-    images: ["/Ithanga Murang'a Plots.webp"],
+    image: "/v2/Ithanga Murang'a Plots.webp",
+    images: ["/v2/Ithanga Murang'a Plots.webp"],
     features: ['30 mins from Thika', 'Ready Titles', 'Agribusiness Ready'],
     status: 'For Sale'
   },
@@ -114,8 +114,8 @@ export const PROPERTIES: Property[] = [
     type: 'Land',
     size: '50x100 ft',
     description: 'Scenic plots near Oldonyo Sabuk national park area. Perfect for speculation or settlement.',
-    image: '/Kilimambogo Oldonyo Sabuk.webp',
-    images: ['/Kilimambogo Oldonyo Sabuk.webp'],
+    image: '/v2/Kilimambogo Oldonyo Sabuk.webp',
+    images: ['/v2/Kilimambogo Oldonyo Sabuk.webp'],
     features: ['Scenic View', 'Developing Area', 'Ready Titles'],
     status: 'For Sale'
   },
@@ -127,8 +127,8 @@ export const PROPERTIES: Property[] = [
     type: 'Residential',
     size: '40x80 ft',
     description: 'Premium residential plots in Tola Ngoingwa estate. High-end neighborhood.',
-    image: '/Tola Ngoingwa.webp',
-    images: ['/Tola Ngoingwa.webp'],
+    image: '/v2/Tola Ngoingwa.webp',
+    images: ['/v2/Tola Ngoingwa.webp'],
     features: ['Gated Community', 'Electricity', 'Water', 'Security'],
     status: 'For Sale'
   },
@@ -140,8 +140,8 @@ export const PROPERTIES: Property[] = [
     type: 'Land',
     size: '50x100 ft',
     description: 'Strategic plots in Gatuanyaga area near Thika. High appreciation potential.',
-    image: '/Muguga  Gatuanyaga.webp',
-    images: ['/Muguga  Gatuanyaga.webp'],
+    image: '/v2/Muguga  Gatuanyaga.webp',
+    images: ['/v2/Muguga  Gatuanyaga.webp'],
     features: ['Near Tarmac', 'Electricity', 'Ready for Settlement'],
     status: 'For Sale'
   },
@@ -153,8 +153,8 @@ export const PROPERTIES: Property[] = [
     type: 'Land',
     size: '1 Acre',
     description: 'Large 1-acre block in Makuyu. Perfect for large scale farming or subdivision.',
-    image: '/Makuyu Mananja Acre.webp',
-    images: ['/Makuyu Mananja Acre.webp'],
+    image: '/v2/Makuyu Mananja Acre.webp',
+    images: ['/v2/Makuyu Mananja Acre.webp'],
     features: ['Red Soil', 'Access Roads', 'Water'],
     status: 'For Sale'
   },
@@ -166,8 +166,8 @@ export const PROPERTIES: Property[] = [
     type: 'Land',
     size: '50x100 ft',
     description: 'Very affordable investment plots in Matuu. Get started with land banking today.',
-    image: '/Matuu Plots.webp',
-    images: ['/Matuu Plots.webp'],
+    image: '/v2/Matuu Plots.webp',
+    images: ['/v2/Matuu Plots.webp'],
     features: ['Affordable', 'Growing Town', 'Ready Titles'],
     status: 'For Sale'
   },
@@ -179,8 +179,8 @@ export const PROPERTIES: Property[] = [
     type: 'Residential',
     size: '85x100 ft',
     description: 'Prime residential plot in Landless Thika. Larger size (85x100).',
-    image: '/Landless Thika.webp',
-    images: ['/Landless Thika.webp'],
+    image: '/v2/Landless Thika.webp',
+    images: ['/v2/Landless Thika.webp'],
     features: ['Large Size', 'developed Area', 'Water & Power'],
     status: 'For Sale'
   },
@@ -192,8 +192,8 @@ export const PROPERTIES: Property[] = [
     type: 'Commercial',
     size: 'Plot',
     description: 'Prime commercial plot next to TIBS College. Ideal for hostels or commercial building.',
-    image: '/Thika Town Commercial.webp',
-    images: ['/Thika Town Commercial.webp'],
+    image: '/v2/Thika Town Commercial.webp',
+    images: ['/v2/Thika Town Commercial.webp'],
     features: ['CBD Location', 'Commercial Use', 'High Footfall'],
     status: 'For Sale'
   },
@@ -205,8 +205,8 @@ export const PROPERTIES: Property[] = [
     type: 'Land',
     size: '1 Acre',
     description: 'Incredibly affordable 1 acre land in Mwingi. Best for long term banking.',
-    image: '/Mwingi Acre.webp',
-    images: ['/Mwingi Acre.webp'],
+    image: '/v2/Mwingi Acre.webp',
+    images: ['/v2/Mwingi Acre.webp'],
     features: ['Low Cost', 'Large Size', 'Investment'],
     status: 'For Sale'
   }
@@ -220,14 +220,14 @@ export const TEAM: TeamMember[] = [
     name: "Stephen Ndung'u",
     role: 'CEO & Founder',
     bio: 'Leading Provision Land & Properties Ltd with a promise to deliver genuinely.',
-    image: "/Stephen Ndung'u.webp"
+    image: "/v2/Stephen Ndung'u.webp"
   },
   {
     id: 't2',
     name: 'Sales Team',
     role: 'Customer Relations',
     bio: 'Our dedicated team is ready to take you for site visits daily.',
-    image: '/Sales Team.webp'
+    image: '/v2/Sales Team.webp'
   }
 ];
 
@@ -275,7 +275,7 @@ Log
 Once this is complete, your account is fully active and ready to perform searches and transfers.
 
 **Provision Land & Properties Ltd** has all its plots for sale verified on Ardhisasa where clients can conduct independent searches before investing their money. You can contact Provision Land & Properties Ltd via +254 797 331 355 for further assistance with Ardhisasa registration.`,
-    image: '/ardhisasa-digital.webp'
+    image: '/v2/ardhisasa-digital.webp'
   },
   {
     id: 'how-to-conduct-land-search-kenya',
@@ -329,7 +329,7 @@ To access the full land search report, you are required to pay a fee of Ksh 500.
 Once you complete the payment, the system will confirm receipt and automatically generate an electronic receipt. You can download or print this receipt for future reference.
 
 **Provision Land & Properties Ltd** has all its plots for sale verified on the [Ardhisasa app](https://ardhisasa.lands.go.ke) where clients can conduct a **provisionlands land search** before investing their money. You can contact Provision Land & Properties Ltd via +254 797 331 355 for further assistance. You can also visit our office at Clairbourn Towers, 5th Floor, Thika, Kenya.`,
-    image: '/ardhisasa-digital.webp'
+    image: '/v2/ardhisasa-digital.webp'
   },
   {
     id: 'what-is-a-caveat-in-property',
@@ -378,7 +378,7 @@ A Caveat may be withdrawn at the Caveator's request at any time. A request to wi
 A caveat that has been lodged without the consent of the registered owner will lapse within 3 months if the caveator does not initiate court proceedings to enforce their rights.
 
 At **Provision Land & Properties Ltd**, all our titles are free of encumbrances and caveats. We ensure 100% genuine transactions for our clients. Contact us at +254 797 331 355 for verified plots.`,
-    image: '/James Mwangi.webp'
+    image: '/v2/James Mwangi.webp'
   },
   {
     id: 'can-foreigners-buy-property-kenya',
@@ -433,7 +433,7 @@ Before purchasing property, it is crucial for foreigners to conduct thorough due
 *   Visit the property physically and confirm the beacons
 
 **Provision Land & Properties Ltd** welcomes foreign investors and provides full legal support for leasehold transfers. Contact us at +254 797 331 355 for expert guidance on buying land in Kenya as a foreigner.`,
-    image: '/Sales Team.webp'
+    image: '/v2/Sales Team.webp'
   },
   {
     id: '10-legal-steps-buying-land-kenya',
@@ -500,7 +500,7 @@ They hand over the Original Title Deed, copies of their ID and PIN, passport pho
 Your lawyer books all these documents at the Lands Registry for registration. The Registrar cancels the old title and prints a new **Title Deed** in your name.
 
 **Provision Land & Properties Ltd** handles steps 2 through 10 for our buyers. When you buy with us, we ensure the legal process is seamless. Contact us at +254 797 331 355 or visit us at Clairbourn Towers, 5th Floor, Thika.`,
-    image: '/Sales Team.webp'
+    image: '/v2/Sales Team.webp'
   },
   {
     id: 'surveying-mutation-kenya',
@@ -557,7 +557,7 @@ This is common in rural areas. The map uses physical features like hedges or fen
 This is used in high-value urban land (like Nairobi CBD or Runda). The corners are defined by precise grid coordinates. Even if a beacon is removed, a surveyor can reset it to the exact millimeter.
 
 At **Provision Land & Properties Ltd**, all our land is properly surveyed with approved mutation forms. We ensure our clients receive accurate maps for every plot they purchase.`,
-    image: '/Tola Ngoingwa.webp'
+    image: '/v2/Tola Ngoingwa.webp'
   },
   {
     id: 'building-home-kenya-guide',
@@ -613,7 +613,7 @@ This stage consumes 40-50% of your budget. It includes plastering, flooring (til
 ### Final Advice
 
 Always have a contingency fund of at least 20% of your budget to cover price fluctuations in materials like steel and cement.`,
-    image: '/Prime half Acre in Kiharu.webp'
+    image: '/v2/Prime half Acre in Kiharu.webp'
   },
   {
     id: 'land-infrastructure-wealth',
@@ -644,7 +644,7 @@ Don't just buy anywhere. The best strategy is to buy land **2km to 5km** from th
 
 **Provision Land Opportunity**
 We identified this trend early. Our projects in **Sagana** and **Ithanga** are strategically positioned to benefit from this exact infrastructure boom.`,
-    image: '/kenya-infrastructure.webp'
+    image: '/v2/kenya-infrastructure.webp'
   },
   {
     id: 'thika-machakos-growth',
@@ -672,7 +672,7 @@ If Thika is the mature brother, Machakos (specifically Matuu) is the energetic, 
 
 **The Aggressive Strategy:** Buy in Matuu. Hold for 5 years. Expect 100%+ appreciation.
 **The Conservative Strategy:** Buy in Thika (Ngoingwa). Build rental units or your retirement home immediately.`,
-    image: '/real-estate-boom.webp'
+    image: '/v2/real-estate-boom.webp'
   },
   {
     id: 'land-business-investment',
@@ -715,7 +715,7 @@ You don't need millions to build rental apartments to earn from land. You can le
 **Telecommunications:** Safaricom and Airtel pay premium monthly rent to place communication masts on strategically located high-ground land.
 
 **Provision Land & Properties Ltd** has plots ideal for both investment and development. All our properties come with ready title deeds. Visit [https://provisionlands.co.ke](https://provisionlands.co.ke) or call +254 797 331 355 to start building your land portfolio today.`,
-    image: '/Mwingi Acre.webp'
+    image: '/v2/Mwingi Acre.webp'
   }
 ];
 
@@ -725,20 +725,20 @@ export const TESTIMONIALS: Testimonial[] = [
     name: 'James Mwangi',
     role: 'Investor',
     content: 'I bought my plot in Ithanga for 700k. The title deed was ready as promised. Genuine people.',
-    avatar: '/James Mwangi.webp'
+    avatar: '/v2/James Mwangi.webp'
   },
   {
     id: 'tm2',
     name: 'Sarah Njoroge',
     role: 'Homeowner',
     content: 'The 1 acre in Mang’u is a gem. 10 mins from town and very affordable compared to others.',
-    avatar: '/Sarah Njoroge.webp'
+    avatar: '/v2/Sarah Njoroge.webp'
   },
   {
     id: 'tm3',
     name: 'David Otieno',
     role: 'Business Owner',
     content: '5-star service! They took me for a site visit and the process was seamless.',
-    avatar: '/David Otieno.webp'
+    avatar: '/v2/David Otieno.webp'
   }
 ];

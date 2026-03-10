@@ -4,46 +4,47 @@ import { Helmet } from 'react-helmet-async';
 import { ArrowRight, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { PROPERTIES, SERVICES } from '../constants';
 import { FeaturedPropertyCard } from '../components/PropertyCard';
+import { ResponsiveImage } from '../components/ResponsiveImage';
 
 const HERO_SLIDES = [
   {
-    image: '/carousel1.webp',
+    image: '/v2/carousel1.webp',
     title: 'Choose the Best',
     subtitle: 'We Promise and Deliver Genuinely',
     align: 'left'
   },
   {
-    image: '/carousel2.webp',
+    image: '/v2/carousel2.webp',
     title: 'Trusted by Thousands',
     subtitle: 'Your Title Deed is Ready',
     align: 'center'
   },
   {
-    image: '/carousel3.webp',
+    image: '/v2/carousel3.webp',
     title: 'Genuine Documentation',
     subtitle: 'Hassle-free Transfer Process',
     align: 'center'
   },
   {
-    image: '/carousel4.webp',
+    image: '/v2/carousel4.webp',
     title: 'Free Site Visits',
     subtitle: 'Every Saturday - Join Us!',
     align: 'right'
   },
   {
-    image: '/carousel5.webp',
+    image: '/v2/carousel5.webp',
     title: 'Prime Locations',
     subtitle: 'Makutano, Ithanga, Thika',
     align: 'center'
   },
   {
-    image: '/carousel6.webp',
+    image: '/v2/carousel6.webp',
     title: 'Tola Estate Ngoingwa',
     subtitle: 'Premium Residential Plots',
     align: 'left'
   },
   {
-    image: '/carousel7.webp',
+    image: '/v2/carousel7.webp',
     title: 'Invest Today',
     subtitle: 'Secure Your Future',
     align: 'right'
@@ -83,7 +84,7 @@ export const Home: React.FC = () => {
         "url": "https://provisionlands.co.ke",
         "logo": {
           "@type": "ImageObject",
-          "url": "https://provisionlands.co.ke/web-app-manifest-512x512.png",
+          "url": "https://provisionlands.co.ke/v2/web-app-manifest-512x512.webp",
           "width": 512,
           "height": 512
         },
@@ -191,7 +192,7 @@ export const Home: React.FC = () => {
         "about": { "@id": "https://provisionlands.co.ke/#organization" },
         "primaryImageOfPage": {
           "@type": "ImageObject",
-          "url": "https://provisionlands.co.ke/carousel1.webp"
+          "url": "https://provisionlands.co.ke/v2/carousel1.webp"
         }
       },
       {
@@ -231,7 +232,7 @@ export const Home: React.FC = () => {
         <title>Home - Provision Land Limited | Land for Sale in Kenya</title>
         <meta name="description" content="Find your dream plot with Provision Land Limited. We offer genuine, affordable land in Thika, Makutano, Sagana, and Machakos with ready title deeds." />
         <link rel="canonical" href="https://provisionlands.co.ke/" />
-        <link rel="preload" as="image" href="/carousel1.webp" fetchpriority="high" />
+        <link rel="preload" as="image" href="/v2/carousel1.webp" fetchpriority="high" />
 
         {/* Schema.org JSON-LD for AI and Search Engines */}
         <script type="application/ld+json">
@@ -250,7 +251,7 @@ export const Home: React.FC = () => {
               }`}
           >
             <div className="relative w-full h-full overflow-hidden">
-              <img
+              <ResponsiveImage
                 src={slide.image}
                 alt={slide.title}
                 width="1920"
@@ -316,7 +317,7 @@ export const Home: React.FC = () => {
         <div className="absolute top-0 right-0 w-1/3 h-full bg-brand-800 skew-x-12 transform translate-x-20 opacity-50"></div>
         <div className="container mx-auto px-4 relative z-10 flex flex-col md:flex-row items-center gap-12">
           <div className="flex-1">
-            <img src="/our core value.webp" alt="Why Choose Us - Core Values" width="800" height="600" className="rounded-2xl shadow-2xl border-4 border-brand-700" loading="lazy" />
+          <ResponsiveImage src="/v2/our core value.webp" alt="Why Choose Us - Core Values" width="800" height="600" className="rounded-2xl shadow-2xl border-4 border-brand-700" loading="lazy" />
           </div>
           <div className="flex-1">
             <h2 className="text-3xl md:text-4xl font-serif font-bold mb-6">Our Core Values</h2>
@@ -348,7 +349,7 @@ export const Home: React.FC = () => {
 
       {/* Call to Action */}
       <section className="py-16 bg-brand-600 text-white text-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/our properties hero background.webp')] bg-cover bg-center opacity-10 mix-blend-overlay"></div>
+        <div className="absolute inset-0 bg-[url('/v2/our properties hero background.webp')] bg-cover bg-center opacity-10 mix-blend-overlay"></div>
         <div className="container mx-auto px-4 relative z-10">
           <h2 className="text-3xl font-serif font-bold mb-4">Site Visits Available Daily!</h2>
           <p className="text-brand-100 mb-8 max-w-2xl mx-auto">Call 0797 331 355 or 0727 774 279 to book your site visit to Matuu, Thika, or Ithanga.</p>
