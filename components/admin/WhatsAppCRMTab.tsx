@@ -176,9 +176,9 @@ export const WhatsAppCRMTab: React.FC = () => {
     );
 
     return (
-        <div className="flex h-[calc(100vh-64px)] relative">
+        <div className="flex flex-col md:flex-row h-[calc(100vh-64px)] relative overflow-hidden md:overflow-visible">
             {/* Left Panel */}
-            <div className="w-80 flex-shrink-0 border-r border-gray-200 bg-white flex flex-col">
+            <div className={`w-full md:w-80 flex-shrink-0 border-r border-gray-200 bg-white flex flex-col ${selectedLead && 'hidden md:flex'}`}>
                 <div className="p-4 border-b border-gray-100">
                     <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
                         <MessageSquare size={18} className="text-brand-600" /> WhatsApp Leads
@@ -214,7 +214,7 @@ export const WhatsAppCRMTab: React.FC = () => {
             </div>
 
             {/* Right Panel */}
-            <div className="flex-1 flex flex-col bg-gray-50 min-w-0">
+            <div className={`flex-1 flex flex-col bg-gray-50 min-w-0 ${!selectedLead && 'hidden md:flex'}`}>
                 {!selectedLead ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-3">
                         <MessageSquare size={48} className="opacity-30" />
@@ -223,38 +223,45 @@ export const WhatsAppCRMTab: React.FC = () => {
                 ) : (
                     <>
                         {/* Lead Header */}
-                        <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-full bg-brand-700 flex items-center justify-center text-white font-bold text-sm">
+                        <div className="bg-white border-b border-gray-200 p-3 md:p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-2 md:gap-3">
+                                {/* Back button for mobile */}
+                                <button 
+                                    onClick={() => setSelectedLead(null)}
+                                    className="md:hidden p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg"
+                                >
+                                    <ChevronDown className="rotate-90" size={20} />
+                                </button>
+                                <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-brand-700 flex items-center justify-center text-white font-bold text-xs md:text-sm">
                                     {initials(selectedLead.name)}
                                 </div>
                                 <div>
-                                    <p className="font-bold text-slate-800">{selectedLead.name}</p>
-                                    <p className="text-xs text-gray-500 flex items-center gap-1">
-                                        <Phone size={10} /> {selectedLead.phone}
+                                    <p className="font-bold text-slate-800 text-sm md:text-base">{selectedLead.name}</p>
+                                    <p className="text-[10px] md:text-xs text-gray-500 flex items-center gap-1">
+                                        <Phone size={9} /> {selectedLead.phone}
                                     </p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 md:gap-2">
                                 {/* Status dropdown */}
                                 <div className="relative">
                                     <select
                                         value={selectedLead.status}
                                         onChange={e => handleStatusChange(e.target.value)}
                                         disabled={updatingStatus}
-                                        className={`text-xs font-bold rounded-full pl-3 pr-7 py-1.5 border-0 outline-none appearance-none cursor-pointer ${statusColor(selectedLead.status)}`}
+                                        className={`text-[10px] md:text-xs font-bold rounded-full pl-2 pr-6 md:pl-3 md:pr-7 py-1 md:py-1.5 border-0 outline-none appearance-none cursor-pointer ${statusColor(selectedLead.status)}`}
                                     >
                                         {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
                                     </select>
-                                    <ChevronDown size={11} className="absolute right-2 top-2 pointer-events-none opacity-60" />
+                                    <ChevronDown size={10} className="absolute right-1.5 md:right-2 top-1.5 md:top-2 pointer-events-none opacity-60" />
                                 </div>
                                 <a href={formatWALink(selectedLead.phone)} target="_blank" rel="noopener noreferrer"
-                                    className="flex items-center gap-1 text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg font-medium transition">
-                                    <ExternalLink size={12} /> WhatsApp
+                                    className="flex items-center gap-1 text-[10px] md:text-xs bg-green-600 hover:bg-green-700 text-white px-2 py-1 md:px-3 md:py-1.5 rounded-lg font-medium transition">
+                                    <ExternalLink size={11} className="hidden sm:block" /> WA
                                 </a>
                                 <button
                                     onClick={handleMarkConverted}
-                                    className="flex items-center gap-1 text-xs bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg font-medium transition"
+                                    className="hidden sm:flex items-center gap-1 text-xs bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg font-medium transition"
                                 >
                                     <CheckCircle size={12} /> Converted
                                 </button>
@@ -262,10 +269,10 @@ export const WhatsAppCRMTab: React.FC = () => {
                         </div>
 
                         {/* Lead Info Bar */}
-                        <div className="bg-white border-b border-gray-100 px-4 py-2 flex gap-6 text-xs text-gray-500">
+                        <div className="bg-white border-b border-gray-100 px-4 py-2 flex flex-wrap gap-x-6 gap-y-1 text-[10px] md:text-xs text-gray-500">
                             <span><b className="text-slate-700">Interest:</b> {selectedLead.interest || '—'}</span>
                             <span><b className="text-slate-700">Days silent:</b> {daysSince(selectedLead.last_active || selectedLead.created_at)}d</span>
-                            {selectedLead.ai_summary && <span className="truncate flex-1"><b className="text-slate-700">AI Summary:</b> {selectedLead.ai_summary}</span>}
+                            {selectedLead.ai_summary && <span className="truncate flex-1 min-w-full sm:min-w-0"><b className="text-slate-700">AI Summary:</b> {selectedLead.ai_summary}</span>}
                         </div>
 
                         {/* Conversation */}

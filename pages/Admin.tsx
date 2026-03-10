@@ -26,7 +26,8 @@ import {
     UserX,
     ChevronDown,
     Send,
-    CreditCard
+    CreditCard,
+    Menu
 } from 'lucide-react';
 import { COMPANY_INFO } from '../constants';
 import { getLeads, updateLead, triggerFollowup, Lead } from '../services/dataService';
@@ -290,6 +291,7 @@ export const AdminPage: React.FC = () => {
     const [statusFilter, setStatusFilter] = useState('all');
     const [sourceFilter, setSourceFilter] = useState('all');
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { toast, showToast } = useToast();
 
     const MAX_ATTEMPTS = 5;
@@ -448,6 +450,37 @@ export const AdminPage: React.FC = () => {
         broadcasts: 'Broadcasts',
     };
 
+    const handleExportCSV = () => {
+        if (filteredLeads.length === 0) {
+            showToast('No leads to export', 'error');
+            return;
+        }
+
+        const headers = ['ID', 'Name', 'Email', 'Phone', 'Source', 'Interest', 'Status', 'Date', 'Last Active'];
+        const rows = filteredLeads.map(l => [
+            l.id,
+            `"${l.name.replace(/"/g, '""')}"`,
+            `"${(l.email || '').replace(/"/g, '""')}"`,
+            `"${l.phone}"`,
+            l.source,
+            `"${(l.interest || '').replace(/"/g, '""')}"`,
+            l.status,
+            l.created_at ? new Date(l.created_at).toLocaleDateString() : '',
+            l.last_active ? new Date(l.last_active).toLocaleDateString() : ''
+        ]);
+
+        const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `leads_export_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('CSV Exported successfully!');
+    };
+
     if (!isAuthenticated) {
         return (
             <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
@@ -499,7 +532,7 @@ export const AdminPage: React.FC = () => {
         <div className="min-h-screen bg-gray-50 flex">
             <Helmet><title>CRM Dashboard | Provision Land</title></Helmet>
 
-            {/* Sidebar */}
+            {/* Sidebar Desktop */}
             <aside className="w-64 bg-slate-900 text-white hidden md:flex flex-col flex-shrink-0">
                 <div className="p-6 border-b border-slate-800">
                     <h2 className="text-xl font-serif font-bold text-white">Provision<span className="text-brand-500">CRM</span></h2>
@@ -533,16 +566,68 @@ export const AdminPage: React.FC = () => {
                 </div>
             </aside>
 
+            {/* Mobile Menu Overlay */}
+            {isMobileMenuOpen && (
+                <div className="fixed inset-0 z-50 md:hidden">
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
+                    <aside className="fixed inset-y-0 left-0 w-72 bg-slate-900 shadow-2xl flex flex-col animate-in slide-in-from-left duration-300">
+                        <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+                            <h2 className="text-xl font-serif font-bold text-white">Provision<span className="text-brand-500">CRM</span></h2>
+                            <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-400 hover:text-white">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+                            {[
+                                { id: 'leads', icon: <LayoutDashboard size={20} />, label: 'Leads Dashboard' },
+                                { id: 'sitevisits', icon: <Calendar size={20} />, label: 'Site Visits' },
+                                { id: 'installments', icon: <CreditCard size={20} />, label: 'Installments' },
+                                { id: 'whatsapp', icon: <MessageSquare size={20} />, label: 'WhatsApp CRM' },
+                                { id: 'properties', icon: <Home size={20} />, label: 'Properties' },
+                                { id: 'blog', icon: <FileText size={20} />, label: 'Blog Posts' },
+                                { id: 'broadcasts', icon: <Radio size={20} />, label: 'Broadcasts' },
+                            ].map(item => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition text-sm font-medium ${activeTab === item.id ? 'bg-brand-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                                >
+                                    {item.icon}<span>{item.label}</span>
+                                </button>
+                            ))}
+                        </nav>
+                        <div className="p-4 border-t border-slate-800">
+                            <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:text-red-400 transition text-sm"
+                            >
+                                <LogOut size={20} /><span>Logout</span>
+                            </button>
+                        </div>
+                    </aside>
+                </div>
+            )}
+
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto h-screen">
                 {/* Top Header */}
-                <header className="bg-white shadow-sm px-8 py-4 flex justify-between items-center sticky top-0 z-10">
-                    <h1 className="text-2xl font-bold text-slate-800">{TAB_TITLES[activeTab] || 'Dashboard'}</h1>
+                <header className="bg-white shadow-sm px-4 md:px-8 py-4 flex justify-between items-center sticky top-0 z-10">
+                    <div className="flex items-center gap-3">
+                        <button 
+                            onClick={() => setIsMobileMenuOpen(true)}
+                            className="md:hidden p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg transition"
+                        >
+                            <Menu size={24} />
+                        </button>
+                        <h1 className="text-lg md:text-2xl font-bold text-slate-800 truncate">
+                            {TAB_TITLES[activeTab] || 'Dashboard'}
+                        </h1>
+                    </div>
                     <div className="flex items-center gap-4">
-                        <div className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">
+                        <div className="hidden sm:block bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-medium">
                             Production Mode
                         </div>
-                        <div className="h-10 w-10 bg-brand-600 rounded-full flex items-center justify-center text-white font-bold">
+                        <div className="h-8 w-8 md:h-10 md:w-10 bg-brand-600 rounded-full flex items-center justify-center text-white font-bold text-sm md:text-base">
                             SA
                         </div>
                     </div>
@@ -598,21 +683,25 @@ export const AdminPage: React.FC = () => {
                                     className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none"
                                 />
                             </div>
-                            <button className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition text-sm">
+                            <button 
+                                onClick={handleExportCSV}
+                                className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition text-sm"
+                            >
                                 <Download size={16} /><span>Export CSV</span>
                             </button>
                         </div>
 
                         {/* Table */}
-                        <div className="bg-white rounded-b-xl shadow-sm overflow-hidden border-x border-b border-gray-100">
+                        <div className="bg-white rounded-b-xl shadow-sm border-x border-b border-gray-100">
                             {leadsLoading ? (
                                 <div className="flex justify-center items-center h-32 text-brand-600">
                                     <Loader2 size={32} className="animate-spin" />
                                 </div>
                             ) : (
-                                <table className="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr className="bg-gray-50 text-gray-600 text-sm font-semibold border-b border-gray-100">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse min-w-[700px]">
+                                        <thead>
+                                            <tr className="bg-gray-50 text-gray-600 text-sm font-semibold border-b border-gray-100">
                                             <th className="p-4">Name &amp; Contact</th>
                                             <th className="p-4">Interest</th>
                                             <th className="p-4">Status</th>
@@ -655,6 +744,7 @@ export const AdminPage: React.FC = () => {
                                         })}
                                     </tbody>
                                 </table>
+                                </div>
                             )}
                             {!leadsLoading && filteredLeads.length === 0 && (
                                 <div className="p-12 text-center text-gray-500">

@@ -122,8 +122,9 @@ export const PropertiesTab: React.FC = () => {
                         <Loader2 className="animate-spin text-brand-600" size={32} />
                     </div>
                 ) : (
-                    <table className="w-full text-left">
-                        <thead className="bg-gray-50 border-b border-gray-100">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left min-w-[600px]">
+                            <thead className="bg-gray-50 border-b border-gray-100">
                             <tr>
                                 <th className="p-4 text-sm font-semibold text-gray-600">Property</th>
                                 <th className="p-4 text-sm font-semibold text-gray-600">Price</th>
@@ -175,6 +176,7 @@ export const PropertiesTab: React.FC = () => {
                             ))}
                         </tbody>
                     </table>
+                    </div>
                 )}
             </div>
 

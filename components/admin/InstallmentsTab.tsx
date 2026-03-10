@@ -684,9 +684,9 @@ export const InstallmentsTab: React.FC = () => {
             </div>
 
             {/* Two column layout */}
-            <div className="flex flex-1 min-h-0">
+            <div className="flex flex-1 min-h-0 flex-col md:flex-row overflow-hidden md:overflow-visible">
                 {/* Left: Plan List */}
-                <div className="w-80 xl:w-96 flex-shrink-0 border-r border-gray-200 bg-white flex flex-col">
+                <div className={`w-full md:w-80 xl:w-96 flex-shrink-0 border-r border-gray-200 bg-white flex flex-col ${selectedPlan && 'hidden md:flex'}`}>
                     <div className="p-3 border-b border-gray-100 space-y-2">
                         <input
                             type="text"
@@ -736,14 +736,22 @@ export const InstallmentsTab: React.FC = () => {
                 </div>
 
                 {/* Right: Plan Detail */}
-                <div className="flex-1 overflow-y-auto min-w-0">
+                <div className={`flex-1 overflow-y-auto min-w-0 ${!selectedPlan && 'hidden md:block'}`}>
                     {!selectedPlan ? (
                         <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
                             <CreditCard size={48} className="opacity-20" />
                             <p className="text-sm">Select a plan to view details</p>
                         </div>
                     ) : (
-                        <div className="p-6 max-w-2xl mx-auto">
+                        <div className="p-4 md:p-6 max-w-2xl mx-auto">
+                            {/* Back button for mobile */}
+                            <button 
+                                onClick={() => setSelectedPlan(null)}
+                                className="md:hidden flex items-center gap-1 text-green-800 font-bold mb-4 bg-green-50 px-3 py-1.5 rounded-lg"
+                            >
+                                <X size={16} /> Back to list
+                            </button>
+
                             {/* Plan Header */}
                             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-5">
                                 <div className="bg-green-900 px-6 py-5 flex items-start justify-between">

@@ -201,6 +201,7 @@ export const SiteVisitsTab: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [showModal, setShowModal] = useState(false);
+    const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'past'>('today');
     const { toast, showToast } = useToast();
 
     const fetchVisits = useCallback(async () => {
@@ -287,6 +288,19 @@ export const SiteVisitsTab: React.FC = () => {
                 </button>
             </div>
 
+            {/* Mobile Tab Toggle */}
+            <div className="flex md:hidden bg-gray-100 p-1 rounded-xl mb-6">
+                {(['today', 'upcoming', 'past'] as const).map(tab => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${activeTab === tab ? 'bg-white text-brand-700 shadow-sm' : 'text-gray-500'}`}
+                    >
+                        {tab === 'today' ? 'Today' : tab === 'upcoming' ? 'Upcoming' : 'Past'}
+                    </button>
+                ))}
+            </div>
+
             {loading ? (
                 <div className="flex justify-center items-center h-48 text-brand-600">
                     <Loader2 size={36} className="animate-spin" />
@@ -297,9 +311,15 @@ export const SiteVisitsTab: React.FC = () => {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Column title="Today" color="text-blue-700" visits={todayVisits} onMarkComplete={handleMarkComplete} onCancel={handleCancel} emptyMsg="No visits scheduled today." />
-                    <Column title="Upcoming" color="text-brand-700" visits={upcomingVisits} onMarkComplete={handleMarkComplete} onCancel={handleCancel} emptyMsg="No upcoming visits." />
-                    <Column title="Past &amp; Completed" color="text-slate-500" visits={pastVisits} onMarkComplete={handleMarkComplete} onCancel={handleCancel} emptyMsg="No past visits." />
+                    <div className={activeTab === 'today' ? 'block' : 'hidden md:block'}>
+                        <Column title="Today" color="text-blue-700" visits={todayVisits} onMarkComplete={handleMarkComplete} onCancel={handleCancel} emptyMsg="No visits scheduled today." />
+                    </div>
+                    <div className={activeTab === 'upcoming' ? 'block' : 'hidden md:block'}>
+                        <Column title="Upcoming" color="text-brand-700" visits={upcomingVisits} onMarkComplete={handleMarkComplete} onCancel={handleCancel} emptyMsg="No upcoming visits." />
+                    </div>
+                    <div className={activeTab === 'past' ? 'block' : 'hidden md:block'}>
+                        <Column title="Past & Completed" color="text-slate-500" visits={pastVisits} onMarkComplete={handleMarkComplete} onCancel={handleCancel} emptyMsg="No past visits." />
+                    </div>
                 </div>
             )}
 

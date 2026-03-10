@@ -253,8 +253,9 @@ export const BroadcastsTab: React.FC = () => {
                 ) : history.length === 0 ? (
                     <div className="text-center text-gray-400 py-10 text-sm">No broadcasts sent yet.</div>
                 ) : (
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-gray-50 text-xs text-gray-500 font-semibold uppercase tracking-wide">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm min-w-[600px]">
+                            <thead className="bg-gray-50 text-xs text-gray-500 font-semibold uppercase tracking-wide">
                             <tr>
                                 <th className="px-6 py-3">Property</th>
                                 <th className="px-6 py-3">Price</th>
@@ -279,6 +280,7 @@ export const BroadcastsTab: React.FC = () => {
                             ))}
                         </tbody>
                     </table>
+                    </div>
                 )}
             </div>
 
