@@ -56,51 +56,57 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     let client;
     try {
         const body = await request.json() as any;
-        const { plan_id, amount, payment_method, notes } = body;
 
         client = await getDbClient(env);
         
         // Use a transaction
         await client.query('BEGIN');
 
+        const { 
+            plan_id, 
+            client_name, 
+            phone, 
+            amount_paid, 
+            payment_date, 
+            payment_number, 
+            recorded_by, 
+            notes 
+        } = body;
+
         // 1. Insert into installment_payments
         const insertPayment = `
-            INSERT INTO installment_payments (plan_id, amount, payment_date, payment_method, notes)
-            VALUES ($1, $2, NOW(), $3, $4)
-            RETURNING *
+            INSERT INTO installment_payments 
+              (plan_id, client_name, phone, amount_paid, payment_date, payment_number, recorded_by, notes)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING *;
         `;
-        const paymentResult = await client.query(insertPayment, [plan_id, amount, payment_method, notes]);
+        await client.query(insertPayment, [
+            plan_id, client_name, phone, amount_paid, payment_date, payment_number, recorded_by, notes
+        ]);
 
-        // 2. Fetch current plan data
-        const currentPlan = await client.query('SELECT amount_paid, installments_paid, next_due_date, installment_count FROM installment_plans WHERE id = $1', [plan_id]);
-        if (currentPlan.rowCount === 0) throw new Error('Plan not found');
-
-        const { amount_paid, installments_paid, next_due_date, installment_count } = currentPlan.rows[0];
-        
-        // 3. Calculate new values
-        // After recording a payment, recalculate next_due_date by adding 30 days to current due date and update amount_paid += payment amount.
-        const newAmountPaid = parseFloat(amount_paid) + parseFloat(amount);
-        const newInstallmentsPaid = installments_paid + 1;
-        
-        // Add 30 days to next_due_date
-        const nextDate = new Date(next_due_date);
-        nextDate.setDate(nextDate.getDate() + 30);
-        
-        // 4. Update the plan
+        // 2. Update the parent installment_plans record
         const updatePlan = `
-            UPDATE installment_plans 
-            SET amount_paid = $1, 
-                installments_paid = $2, 
-                next_due_date = $3,
-                status = CASE WHEN $2 >= installment_count THEN 'completed' ELSE 'active' END
-            WHERE id = $4
+            UPDATE installment_plans
+            SET
+              amount_paid = COALESCE(amount_paid, 0) + $1,
+              installments_paid = COALESCE(installments_paid, 0) + 1,
+              next_due_date = next_due_date::date + INTERVAL '30 days',
+              status = CASE 
+                WHEN (COALESCE(installments_paid, 0) + 1) >= installment_count THEN 'completed'
+                ELSE 'active'
+              END,
+              updated_at = NOW()
+            WHERE id = $2;
         `;
-        await client.query(updatePlan, [newAmountPaid, newInstallmentsPaid, nextDate.toISOString(), plan_id]);
+        await client.query(updatePlan, [amount_paid, plan_id]);
 
+        // 3. Fetch current plan data to return
+        const updatedPlanResult = await client.query('SELECT * FROM installment_plans WHERE id = $1', [plan_id]);
+        
         await client.query('COMMIT');
         await client.end();
         
-        return new Response(JSON.stringify(paymentResult.rows[0]), {
+        return new Response(JSON.stringify(updatedPlanResult.rows[0]), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
     } catch (err: any) {

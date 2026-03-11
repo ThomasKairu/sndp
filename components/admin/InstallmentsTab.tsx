@@ -332,7 +332,7 @@ const RecordPaymentModal = ({ plan, onClose, onSave }: {
     const [form, setForm] = useState({
         amount_paid: String(plan.installment_amount),
         payment_date: todayISO(),
-        recorded_by: 'Sales Team',
+        recorded_by: 'CRM Admin',
         notes: ''
     });
     const [saving, setSaving] = useState(false);
@@ -575,7 +575,7 @@ export const InstallmentsTab: React.FC = () => {
 
     // ── Stats ──────────────────────────────────────────────────────────────
     const activePlans = plans.filter(p => p.status === 'active');
-    const totalCollected = activePlans.reduce((s, p) => s + (p.amount_paid || 0), 0);
+    const totalCollected = plans.filter(p => ['active', 'completed'].includes(p.status)).reduce((s, p) => s + (Number(p.amount_paid) || 0), 0);
     const dueThisWeek = plans.filter(p => p.status === 'active' && daysUntil(p.next_due_date) <= 7 && daysUntil(p.next_due_date) >= 0).length;
     const completedPlans = plans.filter(p => p.status === 'completed').length;
 
@@ -598,34 +598,27 @@ export const InstallmentsTab: React.FC = () => {
 
     const handleRecordPayment = async (payment: Partial<InstallmentPayment>) => {
         if (!selectedPlan) return;
-        // Record payment
-        await recordPayment(payment);
+        console.log('Payment payload:', payment);
+        try {
+            // Record payment and receive the updated plan back from the API
+            const updatedPlan = await recordPayment(payment) as unknown as InstallmentPlan;
 
-        // Calculate updates to plan
-        const newAmountPaid = selectedPlan.amount_paid + Number(payment.amount_paid);
-        const newInstallmentsPaid = selectedPlan.installments_paid + 1;
-        const isComplete = newInstallmentsPaid >= selectedPlan.installment_count;
-        const updates: Partial<InstallmentPlan> = {
-            amount_paid: newAmountPaid,
-            installments_paid: newInstallmentsPaid,
-            next_due_date: isComplete ? selectedPlan.next_due_date : nextMonthSameDay(selectedPlan.next_due_date),
-            status: isComplete ? 'completed' : selectedPlan.status,
-        };
+            setPlans(ps => ps.map(p => p.id === selectedPlan.id ? updatedPlan : p));
+            setSelectedPlan(updatedPlan);
 
-        const updatedPlan = await updateInstallmentPlan(selectedPlan.id, updates);
-        setPlans(ps => ps.map(p => p.id === selectedPlan.id ? updatedPlan : p));
-        setSelectedPlan(updatedPlan);
+            // Refresh payment history
+            const history = await getPaymentHistory(selectedPlan.id);
+            setPayments(history);
 
-        // Refresh payment history
-        const history = await getPaymentHistory(selectedPlan.id);
-        setPayments(history);
-
-        setShowPayModal(false);
-        const progress = pct(newAmountPaid, selectedPlan.total_amount);
-        showToast(
-            `Payment recorded! ${selectedPlan.client_name} has paid ${newInstallmentsPaid}/${selectedPlan.installment_count} installments (${progress}%)`,
-            'success'
-        );
+            setShowPayModal(false);
+            showToast(
+                `Payment of KES ${payment.amount_paid} recorded successfully`,
+                'success'
+            );
+        } catch (error: any) {
+            console.error('Payment error:', error);
+            alert(`Payment failed: ${error.message}`); // temporary — makes silent failures visible
+        }
     };
 
     const handleEditPlan = async (updates: Partial<InstallmentPlan>) => {
@@ -672,7 +665,7 @@ export const InstallmentsTab: React.FC = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {[
                         { label: 'Active Plans', value: activePlans.length, icon: <TrendingUp size={18} />, color: 'bg-blue-50 text-blue-700' },
-                        { label: 'Total Collected', value: formatKES(totalCollected), icon: <DollarSign size={18} />, color: 'bg-green-50 text-green-800' },
+                        { label: 'Total Collected', value: `KES ${totalCollected.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <DollarSign size={18} />, color: 'bg-green-50 text-green-800' },
                         { label: 'Due This Week', value: dueThisWeek, icon: <Calendar size={18} />, color: dueThisWeek > 0 ? 'bg-orange-50 text-orange-700' : 'bg-gray-50 text-gray-500' },
                         { label: 'Completed Plans', value: completedPlans, icon: <Trophy size={18} />, color: 'bg-yellow-50 text-yellow-700' },
                     ].map(s => (

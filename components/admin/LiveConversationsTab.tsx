@@ -22,22 +22,36 @@ function initials(name: string) {
 // ---- Chat Bubble ----
 const ChatBubble: React.FC<{ msg: ConversationMessage }> = ({ msg }) => {
     const isUser = msg.role === 'user';
-    const hasHotBadge = msg.message?.includes('[ALERT_SALES]');
-    const cleanMessage = msg.message?.replace(/\[ALERT_SALES\].*?\]/g, '').trim();
+    const isAssistant = msg.role === 'assistant';
+    const hasHotBadge = isAssistant && msg.message?.includes('[ALERT_SALES]');
+    
+    const cleanResponse = (text: string) => {
+        return text.replace(/\[ALERT_SALES\].*$/s, '').trim();
+    };
 
-    if (!cleanMessage && !isUser) return null;
+    const renderMarkdown = (text: string) => {
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<strong>$1</strong>')
+            .replace(/_(.*?)_/g, '<em>$1</em>')
+            .replace(/^[\*\-] (.+)$/gm, '• $1');
+    };
+
+    const displayMsg = isAssistant ? cleanResponse(msg.message) : msg.message;
+
+    if (!displayMsg && isAssistant) return null;
 
     return (
-        <div className={`flex ${isUser ? 'justify-start' : 'justify-end'} mb-4`}>
+        <div className={`flex ${isUser ? 'justify-start' : 'justify-end'} mb-4 relative`}>
             <div className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed relative ${isUser ? 'bg-gray-100 text-slate-800 rounded-bl-sm' : 'bg-green-600 text-white rounded-br-sm'}`}>
                 {hasHotBadge && (
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm">
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm z-10">
                         <Flame size={10} /> HOT
                     </span>
                 )}
-                <p>{cleanMessage}</p>
+                <div dangerouslySetInnerHTML={{ __html: renderMarkdown(displayMsg) }} />
                 <p className={`text-[10px] mt-1 ${isUser ? 'text-gray-400' : 'text-green-100'}`}>
-                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <span className="block">{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </p>
             </div>
         </div>
@@ -164,6 +178,9 @@ export const LiveConversationsTab: React.FC = () => {
                                                     <Flame size={10} /> HOT
                                                 </span>
                                             )}
+                                            <span className="text-[10px] flex items-center gap-1 text-gray-400 bg-gray-50 px-1.5 rounded" title="Message count">
+                                                <MessageSquare size={10} /> {lead.message_count}
+                                            </span>
                                         </div>
                                     </div>
                                 </button>

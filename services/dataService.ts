@@ -214,7 +214,20 @@ export function parseMessage(msg: string): string {
 /**
  * Extracts customer name from Steve's responses
  */
-export function extractName(responseText: string): string | null {
+export function extractName(responseText: string, customerText?: string): string | null {
+    if (customerText) {
+        const customerPatterns = [
+            /(?:it'?s|I'?m|my name is|this is)\s+([A-Z][a-z]+)/i,
+            /^([A-Z][a-z]+)\s+(?:here|speaking)/i,
+        ];
+        for (const pattern of customerPatterns) {
+            const match = customerText.match(pattern);
+            if (match && match[1]) {
+                return match[1];
+            }
+        }
+    }
+
     if (!responseText) return null;
     
     // Patterns like "Hi [Name]", "Hello [Name]", "great [Name]", "[Name]!"
@@ -248,11 +261,14 @@ export async function getLeads(): Promise<Lead[]> {
             throw new Error('Failed to fetch leads');
         }
         const data = await response.json() as Lead[];
-        return data.map(l => ({
-            ...l,
-            name: extractName(l.last_response) || l.phone,
-            source: /^254\d{9}$/.test(l.phone) ? 'whatsapp' : 'website'
-        }));
+        const INTERNAL_NUMBERS = ['254797331355', '254727774279'];
+        return data
+            .filter(l => !INTERNAL_NUMBERS.includes(l.phone))
+            .map(l => ({
+                ...l,
+                name: extractName(l.last_response, l.last_message) || l.phone,
+                source: /^254\d{9}$/.test(l.phone) ? 'whatsapp' : 'website'
+            }));
     } catch (err) {
         console.error('Error fetching leads:', err);
         return [];

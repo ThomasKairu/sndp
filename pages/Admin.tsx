@@ -218,7 +218,9 @@ const LeadDrawer = ({ lead, onClose, onUpdate, showToast }: {
                     {/* AI Response Preview */}
                     <div className="bg-gray-50 rounded-lg p-3">
                         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Last AI Response</p>
-                        <p className="text-sm text-slate-700 leading-relaxed">{lead.last_response}</p>
+                        <p className="text-sm text-slate-700 leading-relaxed">
+                            {lead.last_response.replace(/\[ALERT_SALES\].*$/s, '').trim()}
+                        </p>
                     </div>
 
                     {/* Status dropdown */}

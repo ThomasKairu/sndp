@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     MessageSquare, Loader2, AlertCircle, CheckCircle,
-    ExternalLink, Send, Phone, User, ChevronDown
+    ExternalLink, Send, Phone, User, ChevronDown, Flame
 } from 'lucide-react';
 import {
     Lead, getLeads, updateLead, getConversationHistory,
@@ -63,6 +63,9 @@ const LeadItem = ({ lead, selected, onClick }: { lead: Lead; selected: boolean; 
                         {days}d silent
                     </span>
                     {lead.status === 'hot' && <span className="bg-red-50 text-red-600 text-[9px] font-bold px-1 rounded flex items-center gap-0.5">🔥 HOT</span>}
+                    <span className="flex items-center gap-1 text-[10px] text-slate-400 bg-gray-100 px-1.5 py-0.5 rounded-full" title="Message count">
+                        <MessageSquare size={10} /> {lead.message_count}
+                    </span>
                 </div>
             </div>
         </button>
@@ -72,12 +75,34 @@ const LeadItem = ({ lead, selected, onClick }: { lead: Lead; selected: boolean; 
 // ---- Chat Bubble ----
 const ChatBubble: React.FC<{ msg: ConversationMessage }> = ({ msg }) => {
     const isUser = msg.role === 'user';
+    const isAssistant = msg.role === 'assistant';
+    const hasAlert = isAssistant && msg.message.includes('[ALERT_SALES]');
+
+    const cleanResponse = (text: string) => {
+        return text.replace(/\[ALERT_SALES\].*$/s, '').trim();
+    };
+
+    const renderMarkdown = (text: string) => {
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<strong>$1</strong>')
+            .replace(/_(.*?)_/g, '<em>$1</em>')
+            .replace(/^[\*\-] (.+)$/gm, '• $1');
+    };
+
+    const displayMsg = isAssistant ? cleanResponse(msg.message) : msg.message;
+
     return (
-        <div className={`flex ${isUser ? 'justify-start' : 'justify-end'} mb-3`}>
-            <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${isUser ? 'bg-gray-100 text-slate-800 rounded-bl-sm' : 'bg-green-600 text-white rounded-br-sm'}`}>
-                <p>{msg.message}</p>
+        <div className={`flex ${isUser ? 'justify-start' : 'justify-end'} mb-3 relative`}>
+            <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed relative ${isUser ? 'bg-gray-100 text-slate-800 rounded-bl-sm' : 'bg-green-600 text-white rounded-br-sm'}`}>
+                {hasAlert && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm z-10">
+                        <Flame size={10} /> HOT
+                    </span>
+                )}
+                <div dangerouslySetInnerHTML={{ __html: renderMarkdown(displayMsg) }} />
                 <p className={`text-[10px] mt-1 ${isUser ? 'text-gray-400' : 'text-green-100'}`}>
-                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <span className="block">{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </p>
             </div>
         </div>
@@ -154,10 +179,17 @@ export const WhatsAppCRMTab: React.FC = () => {
     const handleSendFollowup = async () => {
         if (!selectedLead || !followupMessage.trim()) return;
         setSendingFollowup(true);
+        const msgText = followupMessage.trim();
         try {
-            await sendManualFollowup(selectedLead.phone, followupMessage.trim());
-            showToast('Follow-up sent!', 'success');
+            await sendManualFollowup(selectedLead.phone, msgText);
+            showToast('✅ Message sent', 'success');
             setFollowupMessage('');
+            // Update thread immediately
+            setConversation(prev => [...prev, {
+                role: 'assistant',
+                message: msgText,
+                created_at: new Date().toISOString()
+            }]);
         } catch {
             showToast('Failed to send follow-up.', 'error');
         } finally {

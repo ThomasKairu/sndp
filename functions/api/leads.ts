@@ -42,6 +42,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
             const hotLeadsQuery = await client.query(`
                 SELECT COUNT(DISTINCT phone) FROM lead_logs 
                 WHERE response ILIKE '%[ALERT_SALES]%'
+                AND phone NOT IN ('254797331355', '254727774279')
             `);
             
             // Warm Leads: unique phones where no response ever contained [ALERT_SALES]
@@ -51,12 +52,14 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
                     SELECT DISTINCT phone FROM lead_logs 
                     WHERE response ILIKE '%[ALERT_SALES]%'
                 )
+                AND phone NOT IN ('254797331355', '254727774279')
             `);
 
             // Silent 7+ days: unique phones where MAX(timestamp) < NOW() - 7 days
             const silentQuery = await client.query(`
                 SELECT COUNT(*) FROM (
                     SELECT phone FROM lead_logs 
+                    WHERE phone NOT IN ('254797331355', '254727774279')
                     GROUP BY phone 
                     HAVING MAX(timestamp) < NOW() - INTERVAL '7 days'
                 ) as silents
@@ -96,6 +99,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
                 ELSE 'warm'
               END as status
             FROM lead_logs l
+            WHERE phone NOT IN ('254797331355', '254727774279')
             GROUP BY phone
             ORDER BY last_seen DESC
         `);
