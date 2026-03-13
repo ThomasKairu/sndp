@@ -164,8 +164,9 @@ export const WhatsAppCRMTab: React.FC = () => {
             await updateLead(selectedLead.phone, { status: newStatus as any });
             setSelectedLead({ ...selectedLead, status: newStatus as any });
             setLeads(ls => ls.map(l => l.phone === selectedLead.phone ? { ...l, status: newStatus as any } : l));
-            showToast('Status updated!', 'success');
-        } catch {
+            showToast('✅ Status updated', 'success');
+        } catch (err: any) {
+            console.error('[handleStatusChange]', err);
             showToast('Failed to update status.', 'error');
         } finally {
             setUpdatingStatus(false);
@@ -174,8 +175,20 @@ export const WhatsAppCRMTab: React.FC = () => {
 
     const handleMarkConverted = async () => {
         if (!selectedLead) return;
-        await handleStatusChange('converted');
+        setUpdatingStatus(true);
+        try {
+            await updateLead(selectedLead.phone, { status: 'converted' as any, converted: true });
+            setSelectedLead({ ...selectedLead, status: 'converted' as any, converted: true });
+            setLeads(ls => ls.map(l => l.phone === selectedLead.phone ? { ...l, status: 'converted' as any, converted: true } : l));
+            showToast('✅ Marked as Converted', 'success');
+        } catch (err: any) {
+            console.error('[handleMarkConverted]', err);
+            showToast('Failed to mark converted.', 'error');
+        } finally {
+            setUpdatingStatus(false);
+        }
     };
+
 
     const handleSendFollowup = async () => {
         if (!selectedLead || !followupMessage.trim()) return;

@@ -5,110 +5,138 @@ interface Env extends DbEnv {
     N8N_APP_SECRET: string;
 }
 
-export const onRequestGet: PagesFunction<Env> = async (context) => {
-    const { request, env } = context;
-    const url = new URL(request.url);
+// ─── Shared helpers ────────────────────────────────────────────────────────────
 
-    // CORS + Security - Allow naked and www domains
+function getCorsHeaders(request: Request) {
     const origin = request.headers.get('Origin');
     const allowedOrigins = ['https://provisionlands.co.ke', 'https://www.provisionlands.co.ke'];
-    const corsHeaders = {
+    return {
         'Access-Control-Allow-Origin': allowedOrigins.includes(origin || '') ? origin! : 'https://provisionlands.co.ke',
         'Access-Control-Allow-Headers': 'Content-Type, x-internal-secret',
         ...SECURITY_HEADERS,
     };
+}
 
-    // --- Authentication Check ---
+function checkAuth(request: Request, env: Env): boolean {
     const secret = request.headers.get('x-internal-secret');
     const internalSecret = env.N8N_APP_SECRET?.trim();
+    return !!(secret && internalSecret && secret.trim() === internalSecret);
+}
 
-    if (!secret || secret.trim() !== internalSecret) {
-        return new Response(JSON.stringify({
-            error: "Unauthorized",
-            hint: !internalSecret ? "System secret not configured in Cloudflare" : "Incorrect key"
-        }), {
-            status: 401,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-    }
+function unauthorizedResponse(corsHeaders: Record<string, string>, env: Env) {
+    const internalSecret = env.N8N_APP_SECRET?.trim();
+    return new Response(JSON.stringify({
+        error: 'Unauthorized',
+        hint: !internalSecret ? 'System secret not configured in Cloudflare' : 'Incorrect key'
+    }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+}
+
+// Ensure the lead_status_overrides table exists (idempotent)
+async function ensureOverridesTable(client: any) {
+    await client.query(`
+        CREATE TABLE IF NOT EXISTS lead_status_overrides (
+            phone       VARCHAR(20) PRIMARY KEY,
+            status      VARCHAR(20) NOT NULL DEFAULT 'warm',
+            converted   BOOLEAN     NOT NULL DEFAULT false,
+            notes       TEXT,
+            updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    `);
+}
+
+// ─── GET /api/leads ────────────────────────────────────────────────────────────
+
+export const onRequestGet: PagesFunction<Env> = async (context) => {
+    const { request, env } = context;
+    const url = new URL(request.url);
+    const corsHeaders = getCorsHeaders(request);
+
+    if (!checkAuth(request, env)) return unauthorizedResponse(corsHeaders, env);
 
     let client;
     try {
         client = await getDbClient(env);
+        await ensureOverridesTable(client);
 
-        // --- Stats Logic ---
+        // ── Stats ──────────────────────────────────────────────────────────────
         if (url.searchParams.get('stats') === 'true') {
-            // Hot Leads: unique phones where at least one response contained [ALERT_SALES]
             const hotLeadsQuery = await client.query(`
-                SELECT COUNT(DISTINCT phone) FROM lead_logs 
-                WHERE response ILIKE '%[ALERT_SALES]%'
-                AND phone NOT IN ('254797331355', '254727774279')
-            `);
-            
-            // Warm Leads: unique phones where no response ever contained [ALERT_SALES]
-            const warmLeadsQuery = await client.query(`
-                SELECT COUNT(DISTINCT phone) FROM lead_logs 
-                WHERE phone NOT IN (
-                    SELECT DISTINCT phone FROM lead_logs 
-                    WHERE response ILIKE '%[ALERT_SALES]%'
+                SELECT COUNT(DISTINCT l.phone) FROM lead_logs l
+                LEFT JOIN lead_status_overrides lso ON lso.phone = l.phone
+                WHERE l.phone NOT IN ('254797331355', '254727774279')
+                AND (
+                    COALESCE(lso.status, '') = 'hot'
+                    OR EXISTS (
+                        SELECT 1 FROM lead_logs l3
+                        WHERE l3.phone = l.phone AND l3.response ILIKE '%[ALERT_SALES]%'
+                    )
                 )
-                AND phone NOT IN ('254797331355', '254727774279')
             `);
 
-            // Silent 7+ days: unique phones where MAX(timestamp) < NOW() - 7 days
+            const warmLeadsQuery = await client.query(`
+                SELECT COUNT(DISTINCT l.phone) FROM lead_logs l
+                LEFT JOIN lead_status_overrides lso ON lso.phone = l.phone
+                WHERE l.phone NOT IN ('254797331355', '254727774279')
+                AND COALESCE(lso.status, '') NOT IN ('hot', 'converted', 'CLOSED')
+                AND NOT EXISTS (
+                    SELECT 1 FROM lead_logs l3
+                    WHERE l3.phone = l.phone AND l3.response ILIKE '%[ALERT_SALES]%'
+                )
+            `);
+
             const silentQuery = await client.query(`
                 SELECT COUNT(*) FROM (
-                    SELECT phone FROM lead_logs 
+                    SELECT phone FROM lead_logs
                     WHERE phone NOT IN ('254797331355', '254727774279')
-                    GROUP BY phone 
+                    GROUP BY phone
                     HAVING MAX(timestamp) < NOW() - INTERVAL '7 days'
                 ) as silents
             `);
 
-            // Converted: count of records in installment_plans
             const convertedQuery = await client.query('SELECT COUNT(*) FROM installment_plans');
 
             const hotCount = parseInt(hotLeadsQuery.rows[0].count);
             const pipelineValue = hotCount * 1500000;
 
-            const stats = {
+            await client.end();
+            return new Response(JSON.stringify({
                 totalLeads: hotCount + parseInt(warmLeadsQuery.rows[0].count),
                 hotLeads: hotCount,
                 warmLeads: warmLeadsQuery.rows[0].count,
                 silentSevenDays: silentQuery.rows[0].count,
                 pipelineValue: 'KES ' + pipelineValue.toLocaleString(),
                 convertedCount: convertedQuery.rows[0].count
-            };
-
-            await client.end();
-            return new Response(JSON.stringify(stats), {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            });
+            }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
 
-        // --- Regular Leads List ---
+        // ── Regular Leads List (with override JOIN + name history scan) ─────────
         const result = await client.query(`
-            SELECT 
-              phone,
-              MAX(timestamp) as last_seen,
-              COUNT(*) as message_count,
-              (SELECT message FROM lead_logs l2 WHERE l2.phone = l.phone ORDER BY timestamp DESC LIMIT 1) as last_message,
-              (SELECT response FROM lead_logs l2 WHERE l2.phone = l.phone ORDER BY timestamp DESC LIMIT 1) as last_response,
-              (SELECT message FROM lead_logs l2
+            SELECT
+              l.phone,
+              MAX(l.timestamp)                                                        AS last_seen,
+              COUNT(*)                                                                AS message_count,
+              (SELECT message  FROM lead_logs l2 WHERE l2.phone = l.phone ORDER BY timestamp DESC LIMIT 1) AS last_message,
+              (SELECT response FROM lead_logs l2 WHERE l2.phone = l.phone ORDER BY timestamp DESC LIMIT 1) AS last_response,
+              (SELECT message  FROM lead_logs l2
                WHERE l2.phone = l.phone
                AND (message ~* $1 OR message ~* $2 OR message ~* $3 OR message ~* $4 OR message ~* $5)
-               ORDER BY timestamp ASC LIMIT 1) as name_message,
+               ORDER BY timestamp ASC LIMIT 1)                                       AS name_message,
               (SELECT response FROM lead_logs l2
                WHERE l2.phone = l.phone
                AND (response ~* $6 OR response ~* $7 OR response ~* $8)
-               ORDER BY timestamp ASC LIMIT 1) as name_response,
-              CASE 
-                WHEN EXISTS (SELECT 1 FROM lead_logs l3 WHERE l3.phone = l.phone AND l3.response ILIKE '%[ALERT_SALES]%') THEN 'hot'
-                ELSE 'warm'
-              END as status
+               ORDER BY timestamp ASC LIMIT 1)                                       AS name_response,
+              COALESCE(
+                lso.status,
+                CASE WHEN bool_or(l.response ILIKE '%[ALERT_SALES]%') THEN 'hot' ELSE 'warm' END
+              )                                                                       AS status,
+              COALESCE(lso.converted, false)                                         AS converted
             FROM lead_logs l
-            WHERE phone NOT IN ('254797331355', '254727774279')
-            GROUP BY phone
+            LEFT JOIN lead_status_overrides lso ON lso.phone = l.phone
+            WHERE l.phone NOT IN ('254797331355', '254727774279')
+            GROUP BY l.phone, lso.status, lso.converted
             ORDER BY last_seen DESC
         `, [
             "it'?s\\s+[A-Z][a-z]{2,}",
@@ -125,25 +153,115 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         return new Response(JSON.stringify(result.rows), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
+
     } catch (err: any) {
-        console.error(err);
+        console.error('[GET /api/leads]', err);
         try { await client?.end(); } catch { }
         return new Response(JSON.stringify({
-            error: "Internal Server Error",
+            error: 'Internal Server Error',
             message: err.message || String(err)
-        }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
+        }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 };
 
-export const onRequestOptions: PagesFunction = async () => {
+// ─── PUT /api/leads?phone=254xxxxxxxxx ─────────────────────────────────────────
+
+export const onRequestPut: PagesFunction<Env> = async (context) => {
+    const { request, env } = context;
+    const url = new URL(request.url);
+    const corsHeaders = getCorsHeaders(request);
+
+    if (!checkAuth(request, env)) return unauthorizedResponse(corsHeaders, env);
+
+    const phone = url.searchParams.get('phone')?.trim();
+    if (!phone) {
+        return new Response(JSON.stringify({ error: 'Missing phone query param' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+    }
+
+    let body: Record<string, any>;
+    try {
+        body = await request.json() as Record<string, any>;
+    } catch {
+        return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+    }
+
+    const { status, converted, notes } = body;
+
+    if (!status && converted === undefined && notes === undefined) {
+        return new Response(JSON.stringify({ error: 'Nothing to update — provide status, converted, or notes' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+    }
+
+    let client;
+    try {
+        client = await getDbClient(env);
+        await ensureOverridesTable(client);
+
+        // Build UPSERT dynamically so we only update provided fields
+        const setClauses: string[] = ['updated_at = NOW()'];
+        const params: any[] = [phone];
+
+        if (status !== undefined) {
+            params.push(status);
+            setClauses.push(`status = $${params.length}`);
+        }
+        if (converted !== undefined) {
+            params.push(converted);
+            setClauses.push(`converted = $${params.length}`);
+        }
+        if (notes !== undefined) {
+            params.push(notes);
+            setClauses.push(`notes = $${params.length}`);
+        }
+
+        // INSERT on missing phone, UPDATE on conflict
+        const insertFields = ['phone', ...(status !== undefined ? ['status'] : []), ...(converted !== undefined ? ['converted'] : []), ...(notes !== undefined ? ['notes'] : [])];
+        const insertValues = params.map((_, i) => `$${i + 1}`);
+
+        await client.query(`
+            INSERT INTO lead_status_overrides (${insertFields.join(', ')})
+            VALUES (${insertValues.join(', ')})
+            ON CONFLICT (phone)
+            DO UPDATE SET ${setClauses.join(', ')}
+        `, params);
+
+        // Return the updated override row
+        const updated = await client.query(
+            'SELECT * FROM lead_status_overrides WHERE phone = $1',
+            [phone]
+        );
+
+        await client.end();
+        return new Response(JSON.stringify(updated.rows[0] || { phone, status, converted }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+
+    } catch (err: any) {
+        console.error('[PUT /api/leads]', err);
+        try { await client?.end(); } catch { }
+        return new Response(JSON.stringify({
+            error: 'Internal Server Error',
+            message: err.message || String(err)
+        }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+};
+
+// ─── OPTIONS (preflight) ────────────────────────────────────────────────────────
+
+export const onRequestOptions: PagesFunction = async (context) => {
+    const corsHeaders = getCorsHeaders(context.request);
     return new Response(null, {
         headers: {
-            'Access-Control-Allow-Origin': 'https://provisionlands.co.ke',
-            'Access-Control-Allow-Methods': 'GET, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, x-internal-secret',
+            ...corsHeaders,
+            'Access-Control-Allow-Methods': 'GET, PUT, OPTIONS',
         },
     });
 };

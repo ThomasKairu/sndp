@@ -192,7 +192,8 @@ export interface Lead {
     // Extended fields returned by updated SQL query (scan all history for names)
     name_message?: string; // first customer message in history that mentions a name
     name_response?: string; // first Steve response in history that addresses customer by name
-    status: 'hot' | 'warm';
+    status: 'hot' | 'warm' | 'NEW' | 'converted' | 'cold' | 'CLOSED';
+    converted?: boolean;   // from lead_status_overrides
     // Helper fields added by frontend
     name?: string;
     source?: 'whatsapp' | 'website';
@@ -297,7 +298,8 @@ export async function getLeads(): Promise<Lead[]> {
 }
 
 export async function updateLead(phone: string, updates: Partial<Lead>): Promise<Lead> {
-    const response = await fetch(`${API_BASE}/api/leads?phone=${phone}`, {
+    console.log('[updateLead] Updating lead:', phone, updates);
+    const response = await fetch(`${API_BASE}/api/leads?phone=${encodeURIComponent(phone)}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -308,9 +310,12 @@ export async function updateLead(phone: string, updates: Partial<Lead>): Promise
     handleAuthError(response);
     if (!response.ok) {
         const text = await response.text();
+        console.error('[updateLead] Failed:', response.status, text);
         throw new Error(`Failed to update lead: ${text}`);
     }
-    return response.json();
+    const result = await response.json();
+    console.log('[updateLead] Success:', result);
+    return result;
 }
 
 export async function triggerFollowup(phone: string): Promise<void> {
