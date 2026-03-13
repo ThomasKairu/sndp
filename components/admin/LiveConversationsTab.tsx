@@ -150,7 +150,8 @@ export const LiveConversationsTab: React.FC = () => {
                             const days = daysSince(lead.last_seen);
                             const isHot = lead.status === 'hot';
                             const isWhatsApp = lead.source === 'whatsapp';
-                            const displayName = isWhatsApp ? lead.name : "Website Visitor";
+                            const displayName = lead.name || (isWhatsApp ? "WhatsApp User" : "Website Visitor");
+                            const displayPhone = isWhatsApp ? lead.phone : (lead.phone.startsWith('sess_') || lead.phone.length > 15 ? 'Phone pending' : lead.phone);
 
                             return (
                                 <button
@@ -178,8 +179,8 @@ export const LiveConversationsTab: React.FC = () => {
                                                     <Flame size={10} /> HOT
                                                 </span>
                                             )}
-                                            <span className="text-[10px] flex items-center gap-1 text-gray-400 bg-gray-50 px-1.5 rounded" title="Message count">
-                                                <MessageSquare size={10} /> {lead.message_count}
+                                            <span className="text-[10px] flex items-center gap-1 text-gray-400 bg-gray-50 px-1.5 rounded font-medium">
+                                                {displayPhone}
                                             </span>
                                         </div>
                                     </div>
@@ -211,8 +212,8 @@ export const LiveConversationsTab: React.FC = () => {
                                     {selectedLead.source === 'whatsapp' ? initials(selectedLead.name || '') : <User size={20} />}
                                 </div>
                                 <div>
-                                    <p className="font-bold text-slate-800">{selectedLead.source === 'whatsapp' ? selectedLead.name : "Website Visitor"}</p>
-                                    <p className="text-xs text-gray-500 font-medium">{selectedLead.phone}</p>
+                                    <p className="font-bold text-slate-800">{selectedLead.name || (selectedLead.source === 'whatsapp' ? 'WhatsApp User' : 'Website Visitor')}</p>
+                                    <p className="text-xs text-gray-500 font-medium">{selectedLead.source === 'whatsapp' ? selectedLead.phone : (selectedLead.phone.startsWith('sess_') || selectedLead.phone.length > 15 ? 'Phone pending' : selectedLead.phone)}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">

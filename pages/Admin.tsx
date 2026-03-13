@@ -196,11 +196,17 @@ const LeadDrawer = ({ lead, onClose, onUpdate, showToast }: {
                         {lead.phone && (
                             <div className="flex items-center gap-2 text-sm text-slate-700">
                                 <Phone size={14} className="text-brand-500" />
-                                <a href={`tel:${lead.phone}`} className="hover:text-brand-600">{lead.phone}</a>
-                                <a href={formatWALink(lead.phone)} target="_blank" rel="noopener noreferrer"
-                                    className="ml-auto text-xs bg-green-100 hover:bg-green-200 text-green-700 px-2 py-0.5 rounded-full flex items-center gap-1 transition font-medium">
-                                    <ExternalLink size={10} /> WhatsApp
-                                </a>
+                                {lead.source === 'whatsapp' ? (
+                                    <>
+                                        <a href={`tel:${lead.phone}`} className="hover:text-brand-600">{lead.phone}</a>
+                                        <a href={formatWALink(lead.phone)} target="_blank" rel="noopener noreferrer"
+                                            className="ml-auto text-xs bg-green-100 hover:bg-green-200 text-green-700 px-2 py-0.5 rounded-full flex items-center gap-1 transition font-medium">
+                                            <ExternalLink size={10} /> WhatsApp
+                                        </a>
+                                    </>
+                                ) : (
+                                    <span className="text-gray-400 italic">Phone: {lead.phone.startsWith('sess_') || lead.phone.length > 15 ? 'Not provided' : lead.phone}</span>
+                                )}
                             </div>
                         )}
                         <div className="flex items-center gap-2 text-sm text-slate-700">
@@ -724,7 +730,8 @@ export const AdminPage: React.FC = () => {
                                         {filteredLeads.map(lead => {
                                             const days = daysSince(lead.last_seen);
                                             const isWhatsApp = lead.source === 'whatsapp';
-                                            const displayName = isWhatsApp ? lead.name : "Website Visitor";
+                                            const displayName = lead.name || (isWhatsApp ? "WhatsApp User" : "Website Visitor");
+                                            const displayPhone = isWhatsApp ? lead.phone : (lead.phone.startsWith('sess_') || lead.phone.length > 15 ? 'Phone pending' : lead.phone);
                                             return (
                                                 <tr
                                                     key={lead.phone}
@@ -734,7 +741,7 @@ export const AdminPage: React.FC = () => {
                                                     <td className="p-4">
                                                         <div className="font-bold text-slate-800">{displayName}</div>
                                                         <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                                                            <Phone size={10} />{lead.phone}
+                                                            <Phone size={10} />{displayPhone}
                                                         </div>
                                                     </td>
                                                     <td className="p-4">

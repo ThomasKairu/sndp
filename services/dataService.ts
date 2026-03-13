@@ -252,6 +252,10 @@ export function extractName(lastResponse: string, lastMessage?: string): string 
 
     // Then scan ALL of Steve's response text for addressing the customer by name
     if (lastResponse) {
+        // Special case: Scan [ALERT_SALES] tag for Customer field
+        const alertMatch = lastResponse.match(/\[ALERT_SALES\].*Customer:\s*([A-Z][a-z]+)/i);
+        if (alertMatch?.[1]) return alertMatch[1];
+
         const stevePatterns = [
             /(?:Hi|Hello|Hey|Thank you|Thanks|Great|Excellent|noted|Understood),?\s+([A-Z][a-z]{2,})[.!,\s]/,
             /([A-Z][a-z]{2,}),\s+(?:I've noted|that's|this is|your)/i,
@@ -283,14 +287,16 @@ export async function getLeads(): Promise<Lead[]> {
         const INTERNAL_NUMBERS = ['254797331355', '254727774279'];
         return data
             .filter(l => !INTERNAL_NUMBERS.includes(l.phone))
-            .map(l => ({
-                ...l,
-                // Prefer name extracted from full history (name_message/name_response),
-                // fall back to last_message/last_response, then formatted phone number
-                name: extractName(l.name_response || l.last_response, l.name_message || l.last_message)
-                    || formatPhone(l.phone),
-                source: /^254\d{9}$/.test(l.phone) ? 'whatsapp' : 'website'
-            }));
+            .map(l => {
+                const isWhatsApp = /^254\d{9}$/.test(l.phone);
+                const extractedName = extractName(l.name_response || l.last_response, l.name_message || l.last_message);
+                
+                return {
+                    ...l,
+                    name: extractedName || (isWhatsApp ? formatPhone(l.phone) : 'Website Visitor'),
+                    source: isWhatsApp ? 'whatsapp' : 'website'
+                };
+            });
     } catch (err) {
         console.error('Error fetching leads:', err);
         return [];
