@@ -189,6 +189,9 @@ export interface Lead {
     message_count: string | number;
     last_message: string;
     last_response: string;
+    // Extended fields returned by updated SQL query (scan all history for names)
+    name_message?: string; // first customer message in history that mentions a name
+    name_response?: string; // first Steve response in history that addresses customer by name
     status: 'hot' | 'warm';
     // Helper fields added by frontend
     name?: string;
@@ -212,38 +215,53 @@ export function parseMessage(msg: string): string {
 }
 
 /**
- * Extracts customer name from Steve's responses
+ * Formats a raw phone number into a readable local format.
+ * E.g. 254707013776 → 0707 013 776
  */
-export function extractName(responseText: string, customerText?: string): string | null {
-    if (customerText) {
+export function formatPhone(phone: string): string {
+    if (!phone) return 'Unknown';
+    if (phone.startsWith('254') && phone.length === 12) {
+        const local = '0' + phone.substring(3);
+        return local.replace(/(\d{4})(\d{3})(\d{3})/, '$1 $2 $3');
+    }
+    return phone;
+}
+
+/**
+ * Extracts a customer name from a conversation.
+ * Scans both the customer's own message and Steve's response.
+ * Pass name_message / name_response (from full history scan) for best results.
+ */
+export function extractName(lastResponse: string, lastMessage?: string): string | null {
+    // First scan the CUSTOMER'S message for self-introduction patterns
+    if (lastMessage) {
         const customerPatterns = [
-            /(?:it'?s|I'?m|my name is|this is)\s+([A-Z][a-z]+)/i,
-            /^([A-Z][a-z]+)\s+(?:here|speaking)/i,
+            /(?:it'?s|I'?m|I am|my name is|this is|called|name'?s)\s+([A-Z][a-z]{2,})/i,
+            /^([A-Z][a-z]{2,})\s+(?:here|speaking)/i,
+            /^([A-Z][a-z]{2,})$/, // single word that looks like a name
         ];
         for (const pattern of customerPatterns) {
-            const match = customerText.match(pattern);
-            if (match && match[1]) {
-                return match[1];
+            const match = lastMessage.match(pattern);
+            if (match?.[1]) {
+                const blacklist = ['Steve', 'Provision', 'Land', 'Property', 'Hello', 'Hi', 'Hey', 'Yes', 'Okay', 'Sure', 'WhatsApp'];
+                if (!blacklist.includes(match[1])) return match[1];
             }
         }
     }
 
-    if (!responseText) return null;
-    
-    // Patterns like "Hi [Name]", "Hello [Name]", "great [Name]", "[Name]!"
-    const patterns = [
-        /(?:Hi|Hello|Hey|Greetings|Great)\s+([A-Z][a-z]+)/,
-        /([A-Z][a-z]+),\s+welcome/,
-        /([A-Z][a-z]+)!\s+I'm\s+Steve/,
-        /([A-Z][a-z]+)\s+from\s+Provision/
-    ];
-
-    for (const pattern of patterns) {
-        const match = responseText.match(pattern);
-        if (match && match[1]) {
-            // Basic sanity check: reject common words capitalized
-            const blackList = ['Steve', 'Provision', 'Land', 'Property', 'Wait', 'Here'];
-            if (!blackList.includes(match[1])) return match[1];
+    // Then scan ALL of Steve's response text for addressing the customer by name
+    if (lastResponse) {
+        const stevePatterns = [
+            /(?:Hi|Hello|Hey|Thank you|Thanks|Great|Excellent|noted|Understood),?\s+([A-Z][a-z]{2,})[.!,\s]/,
+            /([A-Z][a-z]{2,}),\s+(?:I've noted|that's|this is|your)/i,
+            /your number,?\s+\*?([A-Z][a-z]{2,})\*?/i,
+        ];
+        for (const pattern of stevePatterns) {
+            const match = lastResponse.match(pattern);
+            if (match?.[1]) {
+                const blacklist = ['Steve', 'Provision', 'Land', 'Property', 'Wait', 'Here', 'Let', 'The', 'Our', 'Your', 'This'];
+                if (!blacklist.includes(match[1])) return match[1];
+            }
         }
     }
     return null;
@@ -266,7 +284,10 @@ export async function getLeads(): Promise<Lead[]> {
             .filter(l => !INTERNAL_NUMBERS.includes(l.phone))
             .map(l => ({
                 ...l,
-                name: extractName(l.last_response, l.last_message) || l.phone,
+                // Prefer name extracted from full history (name_message/name_response),
+                // fall back to last_message/last_response, then formatted phone number
+                name: extractName(l.name_response || l.last_response, l.name_message || l.last_message)
+                    || formatPhone(l.phone),
                 source: /^254\d{9}$/.test(l.phone) ? 'whatsapp' : 'website'
             }));
     } catch (err) {
@@ -325,7 +346,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
             }
         });
         if (!response.ok) throw new Error('Failed to fetch stats');
-        return await response.json();
         return await response.json();
     } catch (err) {
         console.error('Error fetching stats:', err);

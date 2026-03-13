@@ -94,6 +94,14 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
               COUNT(*) as message_count,
               (SELECT message FROM lead_logs l2 WHERE l2.phone = l.phone ORDER BY timestamp DESC LIMIT 1) as last_message,
               (SELECT response FROM lead_logs l2 WHERE l2.phone = l.phone ORDER BY timestamp DESC LIMIT 1) as last_response,
+              (SELECT message FROM lead_logs l2
+               WHERE l2.phone = l.phone
+               AND (message ~* $1 OR message ~* $2 OR message ~* $3 OR message ~* $4 OR message ~* $5)
+               ORDER BY timestamp ASC LIMIT 1) as name_message,
+              (SELECT response FROM lead_logs l2
+               WHERE l2.phone = l.phone
+               AND (response ~* $6 OR response ~* $7 OR response ~* $8)
+               ORDER BY timestamp ASC LIMIT 1) as name_response,
               CASE 
                 WHEN EXISTS (SELECT 1 FROM lead_logs l3 WHERE l3.phone = l.phone AND l3.response ILIKE '%[ALERT_SALES]%') THEN 'hot'
                 ELSE 'warm'
@@ -102,7 +110,16 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
             WHERE phone NOT IN ('254797331355', '254727774279')
             GROUP BY phone
             ORDER BY last_seen DESC
-        `);
+        `, [
+            "it'?s\\s+[A-Z][a-z]{2,}",
+            "I'?m\\s+[A-Z][a-z]{2,}",
+            "my name is\\s+[A-Z][a-z]{2,}",
+            "this is\\s+[A-Z][a-z]{2,}",
+            "called\\s+[A-Z][a-z]{2,}",
+            "Hi\\s+[A-Z][a-z]{2,}",
+            "Thank you,?\\s+[A-Z][a-z]{2,}",
+            "noted,?\\s+[A-Z][a-z]{2,}"
+        ]);
 
         await client.end();
         return new Response(JSON.stringify(result.rows), {

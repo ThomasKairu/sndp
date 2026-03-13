@@ -51,7 +51,7 @@ const ChatBubble: React.FC<{ msg: ConversationMessage }> = ({ msg }) => {
                 )}
                 <div dangerouslySetInnerHTML={{ __html: renderMarkdown(displayMsg) }} />
                 <p className={`text-[10px] mt-1 ${isUser ? 'text-gray-400' : 'text-green-100'}`}>
-                    <span className="block">{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </p>
             </div>
         </div>

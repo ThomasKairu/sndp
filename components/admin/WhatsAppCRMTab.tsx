@@ -102,7 +102,7 @@ const ChatBubble: React.FC<{ msg: ConversationMessage }> = ({ msg }) => {
                 )}
                 <div dangerouslySetInnerHTML={{ __html: renderMarkdown(displayMsg) }} />
                 <p className={`text-[10px] mt-1 ${isUser ? 'text-gray-400' : 'text-green-100'}`}>
-                    <span className="block">{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </p>
             </div>
         </div>
@@ -118,6 +118,7 @@ export const WhatsAppCRMTab: React.FC = () => {
     const [convLoading, setConvLoading] = useState(false);
     const [followupMessage, setFollowupMessage] = useState('');
     const [sendingFollowup, setSendingFollowup] = useState(false);
+    const [sentConfirm, setSentConfirm] = useState(false);
     const [updatingStatus, setUpdatingStatus] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const { toast, showToast } = useToast();
@@ -182,8 +183,9 @@ export const WhatsAppCRMTab: React.FC = () => {
         const msgText = followupMessage.trim();
         try {
             await sendManualFollowup(selectedLead.phone, msgText);
-            showToast('✅ Message sent', 'success');
             setFollowupMessage('');
+            setSentConfirm(true);
+            setTimeout(() => setSentConfirm(false), 2000);
             // Update thread immediately
             setConversation(prev => [...prev, {
                 role: 'assistant',
@@ -328,10 +330,10 @@ export const WhatsAppCRMTab: React.FC = () => {
                                 <button
                                     onClick={handleSendFollowup}
                                     disabled={sendingFollowup || !followupMessage.trim()}
-                                    className="bg-brand-600 hover:bg-brand-700 text-white px-4 rounded-lg font-medium text-sm flex items-center gap-1.5 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className={`px-4 rounded-lg font-medium text-sm flex items-center gap-1.5 transition disabled:opacity-50 disabled:cursor-not-allowed ${sentConfirm ? 'bg-green-500 text-white' : 'bg-brand-600 hover:bg-brand-700 text-white'}`}
                                 >
-                                    {sendingFollowup ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                                    Send
+                                    {sendingFollowup ? <Loader2 size={14} className="animate-spin" /> : sentConfirm ? '✅ Sent' : <Send size={14} />}
+                                    {!sentConfirm && 'Send'}
                                 </button>
                             </div>
                         </div>
