@@ -454,13 +454,14 @@ export async function getConversationHistory(senderId: string): Promise<Conversa
 }
 
 export async function sendManualFollowup(senderId: string, message: string): Promise<void> {
-    const response = await fetch(`${API_BASE}/api/manual-followup`, {
+    const response = await fetch(`${API_BASE}/api/followup`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'x-internal-secret': getAdminSecret()
         },
-        body: JSON.stringify({ sender_id: senderId, message })
+        // senderId is in 254xxxxxxxxx format — used as WhatsApp recipient directly
+        body: JSON.stringify({ senderId, message })
     });
     handleAuthError(response);
     if (!response.ok) {

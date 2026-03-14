@@ -17,5 +17,6 @@ N8N_NEWSLETTER_WEBHOOK = "https://n8n.provisionlands.co.ke/webhook/newsletter"
 # These are NOT stored here as plaintext to avoid security risks:
 # - DB_PASSWORD
 # - N8N_APP_SECRET
+# - WA_TOKEN   ← WhatsApp permanent token for sending messages via /api/followup
 
 

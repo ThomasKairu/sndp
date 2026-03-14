@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     MessageSquare, Loader2, AlertCircle, CheckCircle,
     ExternalLink, Send, Phone, User, ChevronDown, Flame
@@ -13,9 +13,11 @@ import {
 
 function useToast() {
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-    const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const showToast = useCallback((message: string, type: 'success' | 'error' = 'success', durationMs = 3000) => {
+        if (timerRef.current) clearTimeout(timerRef.current);
         setToast({ message, type });
-        setTimeout(() => setToast(null), 3000);
+        timerRef.current = setTimeout(() => setToast(null), durationMs);
     }, []);
     return { toast, showToast };
 }
@@ -47,6 +49,25 @@ function statusColor(status: string) {
 
 const STATUS_OPTIONS = ['NEW', 'warm', 'hot', 'converted', 'cold', 'CLOSED'];
 
+/**
+ * Determines the message type for rendering.
+ * - 'user'   → customer (left side)
+ * - 'agent'  → sales team manual message — message starts with [AGENT] (right side, dark blue)
+ * - 'steve'  → AI assistant (right side, brand blue)
+ */
+type MsgType = 'user' | 'agent' | 'steve';
+
+function getMsgType(msg: ConversationMessage): MsgType {
+    if (msg.role === 'user') return 'user';
+    if (msg.message?.startsWith('[AGENT]')) return 'agent';
+    return 'steve';
+}
+
+/** Strip [AGENT] prefix for display. Customer never sees it. CRM strips it too. */
+function stripAgentPrefix(text: string): string {
+    return text.replace(/^\[AGENT\]\s*/, '').trim();
+}
+
 // ---- Helper Components ----
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => (
@@ -56,23 +77,41 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => (
 );
 
 const ChatBubble: React.FC<{ msg: ConversationMessage }> = ({ msg }) => {
-    const isAssistant = msg.role === 'assistant';
-    const hasHotBadge = isAssistant && msg.message?.includes('[ALERT_SALES]');
-    const cleanMsg = msg.message?.replace(/\[ALERT_SALES\].*$/s, '').trim();
+    const msgType = getMsgType(msg);
+    const isRight = msgType !== 'user';
+
+    // Strip [ALERT_SALES] for Steve messages; strip [AGENT] prefix for agent messages
+    const hasHotBadge = msgType === 'steve' && msg.message?.includes('[ALERT_SALES]');
+    const rawText = msgType === 'agent'
+        ? stripAgentPrefix(msg.message || '')
+        : msg.message?.replace(/\[ALERT_SALES\].*$/s, '').trim() || '';
+
+    // Styling
+    const bubbleStyle = msgType === 'agent'
+        ? 'bg-[#1a56a0] text-white rounded-br-none shadow-md'      // darker blue for sales team
+        : msgType === 'steve'
+            ? 'bg-brand-600 text-white rounded-br-none shadow-md'   // brand blue for Steve
+            : 'bg-white text-slate-800 border border-gray-200 rounded-bl-none shadow-sm'; // left for customer
 
     return (
-        <div className={`flex ${isAssistant ? 'justify-end' : 'justify-start'} mb-4`}>
-            <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed relative ${isAssistant ? 'bg-brand-600 text-white rounded-br-none shadow-md' : 'bg-white text-slate-800 border border-gray-200 rounded-bl-none shadow-sm'}`}>
+        <div className={`flex ${isRight ? 'justify-end' : 'justify-start'} mb-4`}>
+            <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed relative ${bubbleStyle}`}>
                 {hasHotBadge && (
                     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm border border-white">
                         <Flame size={10} /> HOT
                     </span>
                 )}
-                <div className="whitespace-pre-wrap">{cleanMsg}</div>
-                <p className={`text-[10px] mt-1 text-right ${isAssistant ? 'text-brand-100' : 'text-slate-400'}`}>
+                <div className="whitespace-pre-wrap">{rawText}</div>
+                <p className={`text-[10px] mt-1 text-right ${isRight ? 'text-blue-100' : 'text-slate-400'}`}>
                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </p>
             </div>
+            {/* Label below bubble */}
+            {msgType === 'agent' && (
+                <div className="self-end ml-1.5 text-[10px] text-slate-400 font-medium pb-0.5">
+                    🧑‍💼 Sales Team
+                </div>
+            )}
         </div>
     );
 };
@@ -87,10 +126,17 @@ export const WhatsAppCRMTab: React.FC = () => {
     const [convLoading, setConvLoading] = useState(false);
     const [followupMessage, setFollowupMessage] = useState('');
     const [sendingFollowup, setSendingFollowup] = useState(false);
-    const [sentConfirm, setSentConfirm] = useState(false);
     const [updatingStatus, setUpdatingStatus] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const { toast, showToast } = useToast();
+    const threadRef = useRef<HTMLDivElement>(null);
+
+    // Auto-scroll to bottom when conversation updates
+    useEffect(() => {
+        if (threadRef.current) {
+            threadRef.current.scrollTop = threadRef.current.scrollHeight;
+        }
+    }, [conversation]);
 
     const fetchLeads = useCallback(async () => {
         setLoading(true);
@@ -113,9 +159,42 @@ export const WhatsAppCRMTab: React.FC = () => {
         setConversation([]);
         getConversationHistory(selectedLead.phone).then(data => {
             const flattened: ConversationMessage[] = [];
-            data.forEach((log: any) => {
-                if (log.message) flattened.push({ role: 'user', message: parseMessage(log.message), created_at: log.timestamp });
-                if (log.response) flattened.push({ role: 'assistant', message: log.response, created_at: log.timestamp });
+            (data as any[]).forEach((log: any) => {
+                const rawMsg: string = log.message || '';
+                const rawResp: string = log.response || '';
+
+                // ── Agent-sent message rows ────────────────────────────────────
+                // These rows have message = '[AGENT] ...' and response = ''.
+                // They must appear on the RIGHT side (role: assistant) with the
+                // agent bubble style — NOT on the customer side.
+                if (rawMsg.startsWith('[AGENT]')) {
+                    flattened.push({
+                        role: 'assistant',
+                        message: rawMsg,               // keep [AGENT] prefix — getMsgType() uses it
+                        created_at: log.timestamp,
+                    });
+                    // response will be empty for agent rows — skip it
+                    return;
+                }
+
+                // ── Normal customer message (left side) ───────────────────────
+                if (rawMsg) {
+                    flattened.push({
+                        role: 'user',
+                        message: parseMessage(rawMsg),
+                        created_at: log.timestamp,
+                    });
+                }
+
+                // ── Steve's response (right side, brand blue) ─────────────────
+                // Skip empty responses to avoid blank bubbles
+                if (rawResp.trim() !== '') {
+                    flattened.push({
+                        role: 'assistant',
+                        message: rawResp,
+                        created_at: log.timestamp,
+                    });
+                }
             });
             setConversation(flattened);
             setConvLoading(false);
@@ -124,6 +203,7 @@ export const WhatsAppCRMTab: React.FC = () => {
             setConvLoading(false);
         });
     }, [selectedLead, showToast]);
+
 
     const handleStatusChange = async (newStatus: string) => {
         if (!selectedLead) return;
@@ -161,18 +241,29 @@ export const WhatsAppCRMTab: React.FC = () => {
         if (!selectedLead || !followupMessage.trim()) return;
         setSendingFollowup(true);
         const msgText = followupMessage.trim();
+
         try {
             await sendManualFollowup(selectedLead.phone, msgText);
+
+            // ✅ Fix 3: Clear input immediately after successful send
             setFollowupMessage('');
-            setSentConfirm(true);
-            setTimeout(() => setSentConfirm(false), 2000);
+
+            // ✅ Fix 3: Append agent message to conversation thread immediately (right side, dark blue)
+            // Store with [AGENT] prefix so getMsgType correctly identifies it as an agent bubble
             setConversation(prev => [...prev, {
                 role: 'assistant',
-                message: msgText,
-                created_at: new Date().toISOString()
+                message: `[AGENT] ${msgText}`,
+                created_at: new Date().toISOString(),
             }]);
-        } catch {
-            showToast('Failed to send follow-up.', 'error');
+
+            // ✅ Fix 3 / Fix 6: Show green success toast for 2 seconds
+            showToast('✅ Sent successfully', 'success', 2000);
+
+        } catch (err: any) {
+            // ✅ Fix 6: Show red error toast for 3 seconds, keep message in input for retry
+            console.error('[handleSendFollowup] Failed to send:', err);
+            showToast('❌ Failed to send. Please retry.', 'error', 3000);
+            // Message stays in input — do NOT clear followupMessage
         } finally {
             setSendingFollowup(false);
         }
@@ -215,7 +306,7 @@ export const WhatsAppCRMTab: React.FC = () => {
                             const isWhatsApp = lead.source === 'whatsapp';
                             const displayPhone = isWhatsApp ? lead.phone : (lead.phone.startsWith('sess_') || lead.phone.length > 15 ? 'Phone pending' : lead.phone);
                             const displayName = lead.name || (isWhatsApp ? "WhatsApp User" : "Website Visitor");
-                            
+
                             return (
                                 <div
                                     key={lead.phone}
@@ -298,8 +389,21 @@ export const WhatsAppCRMTab: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* Bubble legend */}
+                        <div className="px-4 pt-2 pb-1 flex items-center gap-4 text-[11px] text-gray-400 border-b border-gray-100 bg-white">
+                            <span className="flex items-center gap-1.5">
+                                <span className="w-3 h-3 rounded-full bg-gray-200 inline-block" /> Customer
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                                <span className="w-3 h-3 rounded-full bg-brand-600 inline-block" /> Steve (AI)
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                                <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: '#1a56a0' }} /> Sales Team
+                            </span>
+                        </div>
+
                         {/* Thread */}
-                        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-1">
+                        <div ref={threadRef} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-1">
                             {convLoading ? (
                                 <div className="flex justify-center items-center py-12">
                                     <Loader2 size={32} className="animate-spin text-brand-600" />
@@ -317,18 +421,27 @@ export const WhatsAppCRMTab: React.FC = () => {
                                 <textarea
                                     value={followupMessage}
                                     onChange={e => setFollowupMessage(e.target.value)}
-                                    placeholder="Type a manual follow-up message..."
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                                            e.preventDefault();
+                                            handleSendFollowup();
+                                        }
+                                    }}
+                                    placeholder="Type a manual follow-up message... (Ctrl+Enter to send)"
                                     rows={2}
                                     className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm resize-none focus:ring-2 focus:ring-brand-500 outline-none transition-all shadow-inner bg-gray-50/50"
                                 />
                                 <button
                                     onClick={handleSendFollowup}
                                     disabled={sendingFollowup || !followupMessage.trim()}
-                                    className={`px-6 rounded-xl font-bold text-sm flex items-center justify-center min-w-[100px] transition-all disabled:opacity-50 shadow-md ${sentConfirm ? 'bg-green-500 text-white' : 'bg-brand-800 hover:bg-black text-white'}`}
+                                    className="px-6 rounded-xl font-bold text-sm flex items-center justify-center min-w-[100px] transition-all disabled:opacity-50 shadow-md bg-[#1a56a0] hover:bg-[#154490] text-white"
                                 >
-                                    {sendingFollowup ? <Loader2 size={18} className="animate-spin" /> : sentConfirm ? '✅ SENT' : <Send size={18} />}
+                                    {sendingFollowup ? <Loader2 size={18} className="animate-spin" /> : <><Send size={16} className="mr-1.5" /> Send</>}
                                 </button>
                             </div>
+                            <p className="text-center text-[11px] text-gray-400 mt-1.5">
+                                🧑‍💼 Messages sent here go directly to the customer. Steve will see them in history.
+                            </p>
                         </div>
                     </>
                 )}
