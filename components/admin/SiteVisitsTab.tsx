@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     Calendar, CheckCircle, XCircle, Plus, Loader2, Clock,
-    User, MapPin, MessageSquare, Bell, AlertCircle
+    User, MapPin, MessageSquare, Bell, AlertCircle, ChevronLeft,
+    RotateCcw, UserX, Ban
 } from 'lucide-react';
 import { getSiteVisits, createSiteVisit, updateSiteVisit, SiteVisit } from '../../services/dataService';
+import { getAdminSecret } from '../../services/dataService';
+
+const API_BASE = (import.meta as any).env?.VITE_API_BASE || '';
 
 const PROPERTIES_LIST = [
     'Matuu Kivandini', 'Sagana Makutano', 'Tola Ngoingwa', 'Kiharu',
@@ -48,15 +52,250 @@ function formatWALink(phone: string) {
     return `https://wa.me/${normalized}`;
 }
 
+// ---- Outcome badge config ----
+// Maps the outcome/status value to a human-readable label + colour
+type OutcomeKey = 'attended' | 'no_show' | 'rescheduled' | 'cancelled' | 'completed' | 'scheduled' | string;
+
+const OUTCOME_META: Record<string, { label: string; color: string; icon: string }> = {
+    attended:    { label: 'Attended',    color: 'bg-green-100 text-green-700 border-green-200',  icon: '✅' },
+    no_show:     { label: 'No Show',     color: 'bg-red-100   text-red-700   border-red-200',    icon: '❌' },
+    rescheduled: { label: 'Rescheduled', color: 'bg-blue-100  text-blue-700  border-blue-200',   icon: '🔄' },
+    cancelled:   { label: 'Cancelled',   color: 'bg-gray-100  text-gray-500  border-gray-200',   icon: '🚫' },
+    completed:   { label: 'Completed',   color: 'bg-green-100 text-green-700 border-green-200',  icon: '✅' },
+};
+
+function OutcomeBadge({ status }: { status: string }) {
+    const meta = OUTCOME_META[status];
+    if (!meta) return null;
+    return (
+        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border ${meta.color}`}>
+            {meta.icon} {meta.label}
+        </span>
+    );
+}
+
+// ---- Outcome Modal ----
+type OutcomeChoice = 'attended' | 'no_show' | 'rescheduled' | 'cancelled';
+
+const OUTCOME_OPTIONS: { id: OutcomeChoice; label: string; emoji: string; desc: string; border: string; bg: string }[] = [
+    {
+        id: 'attended',
+        emoji: '✅',
+        label: 'Attended',
+        desc: 'Client came for the visit',
+        border: 'border-green-400',
+        bg: 'bg-green-50',
+    },
+    {
+        id: 'no_show',
+        emoji: '❌',
+        label: 'No Show',
+        desc: 'Client did not show up',
+        border: 'border-red-400',
+        bg: 'bg-red-50',
+    },
+    {
+        id: 'rescheduled',
+        emoji: '🔄',
+        label: 'Rescheduled',
+        desc: 'Client needs a new date',
+        border: 'border-blue-400',
+        bg: 'bg-blue-50',
+    },
+    {
+        id: 'cancelled',
+        emoji: '🚫',
+        label: 'Cancelled',
+        desc: 'Visit will not happen',
+        border: 'border-gray-400',
+        bg: 'bg-gray-50',
+    },
+];
+
+interface OutcomeModalResult {
+    outcome: OutcomeChoice;
+    outcomeNotes: string;
+    rescheduleDate?: string; // ISO datetime string, only for rescheduled
+}
+
+const OutcomeModal = ({
+    visit,
+    onClose,
+    onConfirm,
+}: {
+    visit: SiteVisit;
+    onClose: () => void;
+    onConfirm: (result: OutcomeModalResult) => Promise<void>;
+}) => {
+    const [selected, setSelected] = useState<OutcomeChoice | null>(null);
+    const [notes, setNotes] = useState('');
+    const [reschedDate, setReschedDate] = useState('');
+    const [reschedTime, setReschedTime] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState('');
+
+    const canConfirm = selected !== null &&
+        (selected !== 'rescheduled' || (reschedDate.trim() !== '' && reschedTime.trim() !== ''));
+
+    const handleConfirm = async () => {
+        if (!selected || !canConfirm) return;
+        setError('');
+        setSubmitting(true);
+        try {
+            const result: OutcomeModalResult = {
+                outcome: selected,
+                outcomeNotes: notes.trim(),
+            };
+            if (selected === 'rescheduled') {
+                result.rescheduleDate = new Date(`${reschedDate}T${reschedTime}`).toISOString();
+            }
+            await onConfirm(result);
+        } catch (err: any) {
+            setError(err.message || 'Failed to save. Please try again.');
+            setSubmitting(false);
+        }
+    };
+
+    // Close on backdrop click
+    const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.target === e.currentTarget) onClose();
+    };
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={handleBackdrop}
+        >
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                {/* Header */}
+                <div className="bg-slate-800 p-5 flex justify-between items-center">
+                    <div>
+                        <h3 className="text-white font-bold text-lg">How did the visit go?</h3>
+                        <p className="text-slate-400 text-xs mt-0.5">
+                            {visit.customer_name} · {visit.property_name}
+                        </p>
+                    </div>
+                    <button onClick={onClose} className="text-slate-400 hover:text-white transition">
+                        <XCircle size={22} />
+                    </button>
+                </div>
+
+                <div className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+                    {/* Outcome options */}
+                    <div className="grid grid-cols-2 gap-3">
+                        {OUTCOME_OPTIONS.map(opt => (
+                            <button
+                                key={opt.id}
+                                onClick={() => setSelected(opt.id)}
+                                className={`flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 text-center transition-all cursor-pointer
+                                    ${selected === opt.id
+                                        ? `${opt.border} ${opt.bg} shadow-md scale-[1.02]`
+                                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                    }`}
+                            >
+                                <span className="text-2xl">{opt.emoji}</span>
+                                <span className="font-bold text-sm text-slate-800">{opt.label}</span>
+                                <span className="text-[11px] text-slate-500 leading-tight">{opt.desc}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Reschedule date/time picker — shown only when Rescheduled is selected */}
+                    {selected === 'rescheduled' && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
+                            <p className="text-xs font-bold text-blue-700 uppercase tracking-widest">New Visit Date & Time</p>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1 block">Date</label>
+                                    <input
+                                        type="date"
+                                        value={reschedDate}
+                                        onChange={e => setReschedDate(e.target.value)}
+                                        min={new Date().toISOString().split('T')[0]}
+                                        required
+                                        className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none bg-white"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1 block">Time</label>
+                                    <input
+                                        type="time"
+                                        value={reschedTime}
+                                        onChange={e => setReschedTime(e.target.value)}
+                                        required
+                                        className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none bg-white"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Optional notes */}
+                    <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">
+                            Notes <span className="font-normal text-slate-400">(optional)</span>
+                        </label>
+                        <textarea
+                            value={notes}
+                            onChange={e => setNotes(e.target.value)}
+                            placeholder="Any extra context about the visit..."
+                            rows={2}
+                            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none resize-none transition"
+                        />
+                    </div>
+
+                    {error && (
+                        <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm">
+                            <AlertCircle size={14} /> {error}
+                        </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex gap-3">
+                        <button
+                            onClick={onClose}
+                            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-slate-600 hover:bg-gray-50 transition flex items-center justify-center gap-1.5"
+                        >
+                            <ChevronLeft size={15} /> Back
+                        </button>
+                        <button
+                            onClick={handleConfirm}
+                            disabled={!canConfirm || submitting}
+                            className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-black text-white text-sm font-bold transition flex items-center justify-center gap-2 disabled:opacity-40 shadow-md"
+                        >
+                            {submitting ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                            Confirm
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // ---- Visit Card ----
 const VisitCard = ({ visit, onMarkComplete, onCancel }: {
     visit: SiteVisit;
-    onMarkComplete: (id: number) => void;
+    onMarkComplete: (visit: SiteVisit) => void;
     onCancel: (id: number) => void;
 }) => {
     const isPast = new Date(visit.visit_date) < new Date() && visit.status !== 'completed';
     const isCancelled = visit.status === 'cancelled';
-    const isCompleted = visit.status === 'completed';
+    const isCompleted = ['completed', 'attended', 'no_show', 'rescheduled', 'cancelled'].includes(visit.status);
+    const hasOutcome = ['attended', 'no_show', 'rescheduled', 'cancelled'].includes(visit.status);
+
+    // Status badge in top-right — show outcome if available, else fallback labels
+    const topBadge = hasOutcome
+        ? null // OutcomeBadge is shown below
+        : (
+            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                visit.status === 'completed' ? 'bg-green-100 text-green-700' :
+                isCancelled ? 'bg-gray-100 text-gray-500' :
+                isPast ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-700'
+            }`}>
+                {visit.status === 'completed' ? 'Completed' : isCancelled ? 'Cancelled' : isPast ? 'Overdue' : 'Scheduled'}
+            </span>
+        );
 
     return (
         <div className={`bg-white rounded-xl shadow-sm border p-4 mb-3 transition hover:shadow-md ${isCancelled ? 'opacity-60' : ''}`}>
@@ -73,9 +312,7 @@ const VisitCard = ({ visit, onMarkComplete, onCancel }: {
                         </a>
                     </div>
                 </div>
-                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${isCompleted ? 'bg-green-100 text-green-700' : isCancelled ? 'bg-gray-100 text-gray-500' : isPast ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-700'}`}>
-                    {isCancelled ? 'Cancelled' : isCompleted ? 'Completed' : isPast ? 'Overdue' : 'Scheduled'}
-                </span>
+                {hasOutcome ? <OutcomeBadge status={visit.status} /> : topBadge}
             </div>
             <div className="space-y-1.5 mb-3">
                 <div className="flex items-center gap-2 text-xs text-slate-600">
@@ -87,6 +324,12 @@ const VisitCard = ({ visit, onMarkComplete, onCancel }: {
                     <span>{formatDate(visit.visit_date)} at {formatTime(visit.visit_date)}</span>
                 </div>
             </div>
+            {/* Outcome notes — shown on completed cards */}
+            {visit.outcome_notes && (
+                <div className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 mb-3 text-xs text-slate-600 italic">
+                    📝 {visit.outcome_notes}
+                </div>
+            )}
             {/* Reminder badges */}
             <div className="flex gap-2 mb-3">
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${visit.reminder_24hr_sent ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-yellow-50 text-yellow-700 border border-yellow-200'}`}>
@@ -96,11 +339,11 @@ const VisitCard = ({ visit, onMarkComplete, onCancel }: {
                     <Bell size={9} /> Morning {visit.reminder_morning_sent ? '✅' : '⏳'}
                 </span>
             </div>
-            {/* Actions */}
-            {!isCompleted && !isCancelled && (
+            {/* Actions — only for non-completed, non-cancelled visits */}
+            {!isCompleted && (
                 <div className="flex gap-2">
                     <button
-                        onClick={() => onMarkComplete(visit.id)}
+                        onClick={() => onMarkComplete(visit)}
                         className="flex-1 text-xs bg-green-600 hover:bg-green-700 text-white py-1.5 rounded-lg font-medium flex items-center justify-center gap-1 transition"
                     >
                         <CheckCircle size={13} /> Complete
@@ -118,17 +361,17 @@ const VisitCard = ({ visit, onMarkComplete, onCancel }: {
 };
 
 const PROPERTY_NAMES = [
-    'Prime ½ Acre in Kiharu', '1 Acre at Mang’u', 'Sagana Makutano Plots',
-    'Ithanga Murang’a Plots', 'Kilimambogo / Oldonyo Sabuk', 'Tola Ngoingwa',
+    'Prime ½ Acre in Kiharu', '1 Acre at Mang\u02bcu', 'Sagana Makutano Plots',
+    'Ithanga Murang\u02bca Plots', 'Kilimambogo / Oldonyo Sabuk', 'Tola Ngoingwa',
     'Muguga / Gatuanyaga', 'Makuyu Mananja Acre', 'Matuu Plots',
     'Landless Thika', 'Thika Town Commercial', 'Mwingi Acre'
 ];
 
 // ---- Schedule Modal ----
 const ScheduleModal = ({ onClose, onSubmit }: { onClose: () => void; onSubmit: (data: Partial<SiteVisit>) => void }) => {
-    const [form, setForm] = useState({ 
-        customer_name: '', sender_id: '', property_name: PROPERTY_NAMES[0], 
-        date: '', time: '', notes: '' 
+    const [form, setForm] = useState({
+        customer_name: '', sender_id: '', property_name: PROPERTY_NAMES[0],
+        date: '', time: '', notes: ''
     });
     const [submitting, setSubmitting] = useState(false);
 
@@ -138,13 +381,13 @@ const ScheduleModal = ({ onClose, onSubmit }: { onClose: () => void; onSubmit: (
         setSubmitting(true);
         try {
             const iso = new Date(`${form.date}T${form.time}`).toISOString();
-            await onSubmit({ 
-                customer_name: form.customer_name, 
-                sender_id: form.sender_id, 
-                property_name: form.property_name, 
-                visit_date: iso, 
+            await onSubmit({
+                customer_name: form.customer_name,
+                sender_id: form.sender_id,
+                property_name: form.property_name,
+                visit_date: iso,
                 notes: form.notes,
-                status: 'scheduled' 
+                status: 'scheduled'
             });
         } finally {
             setSubmitting(false);
@@ -204,7 +447,7 @@ const ScheduleModal = ({ onClose, onSubmit }: { onClose: () => void; onSubmit: (
 // ---- Column ----
 const Column = ({ title, color, visits, onMarkComplete, onCancel, emptyMsg }: {
     title: string; color: string; visits: SiteVisit[];
-    onMarkComplete: (id: number) => void; onCancel: (id: number) => void; emptyMsg: string;
+    onMarkComplete: (visit: SiteVisit) => void; onCancel: (id: number) => void; emptyMsg: string;
 }) => (
     <div className="flex-1 min-w-0">
         <div className={`flex items-center justify-between mb-4 px-1`}>
@@ -229,6 +472,10 @@ export const SiteVisitsTab: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [showModal, setShowModal] = useState(false);
+
+    // Outcome modal state
+    const [outcomeVisit, setOutcomeVisit] = useState<SiteVisit | null>(null);
+
     const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'past'>('today');
     const { toast, showToast } = useToast();
 
@@ -247,16 +494,59 @@ export const SiteVisitsTab: React.FC = () => {
 
     useEffect(() => { fetchVisits(); }, [fetchVisits]);
 
-    const handleMarkComplete = async (id: number) => {
-        try {
-            await updateSiteVisit(id, { status: 'completed' });
-            setVisits(v => v.map(x => x.id === id ? { ...x, status: 'completed' } : x));
-            showToast('Visit marked as completed!', 'success');
-        } catch {
-            showToast('Failed to update visit.', 'error');
-        }
+    // Opens the outcome modal instead of directly completing
+    const handleMarkComplete = (visit: SiteVisit) => {
+        setOutcomeVisit(visit);
     };
 
+    // Called when the user confirms an outcome in the modal
+    const handleOutcomeConfirm = async (result: OutcomeModalResult) => {
+        if (!outcomeVisit) return;
+        const id = outcomeVisit.id;
+
+        if (result.outcome === 'rescheduled' && result.rescheduleDate) {
+            // Special path: update original + create new row atomically via API
+            const response = await fetch(`${API_BASE}/api/site-visits?id=${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-internal-secret': getAdminSecret(),
+                },
+                body: JSON.stringify({
+                    reschedule_new_date: result.rescheduleDate,
+                    outcome_notes: result.outcomeNotes || undefined,
+                }),
+            });
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Failed to reschedule: ${text}`);
+            }
+            const { updated, created } = await response.json() as { updated: SiteVisit; created: SiteVisit };
+
+            setVisits(vs => [
+                ...vs.map(v => v.id === id ? { ...v, status: 'rescheduled', outcome_notes: result.outcomeNotes || undefined } : v),
+                created,
+            ]);
+            showToast('Visit rescheduled — new visit created!', 'success');
+        } else {
+            // Standard update: status = outcome, outcome_notes = notes
+            const updated = await updateSiteVisit(id, {
+                status: result.outcome,
+                outcome_notes: result.outcomeNotes || undefined,
+            });
+            setVisits(vs => vs.map(v => v.id === id ? { ...v, ...updated } : v));
+            const labels: Record<string, string> = {
+                attended: 'Visit marked as Attended ✅',
+                no_show: 'Visit marked as No Show ❌',
+                cancelled: 'Visit cancelled 🚫',
+            };
+            showToast(labels[result.outcome] || 'Visit updated.', 'success');
+        }
+
+        setOutcomeVisit(null);
+    };
+
+    // Cancel — unchanged behaviour
     const handleCancel = async (id: number) => {
         try {
             await updateSiteVisit(id, { status: 'cancelled' });
@@ -267,6 +557,7 @@ export const SiteVisitsTab: React.FC = () => {
         }
     };
 
+    // Schedule — unchanged behaviour
     const handleSchedule = async (data: Partial<SiteVisit>) => {
         try {
             const newVisit = await createSiteVisit(data);
@@ -280,9 +571,12 @@ export const SiteVisitsTab: React.FC = () => {
 
     const now = new Date();
     const todayVisits = visits.filter(v => isToday(v.visit_date) && v.status !== 'cancelled');
-    const upcomingVisits = visits.filter(v => new Date(v.visit_date) > now && !isToday(v.visit_date) && v.status !== 'cancelled' && v.status !== 'completed');
-    const pastVisits = visits.filter(v => new Date(v.visit_date) < now && !isToday(v.visit_date) || v.status === 'completed' || v.status === 'cancelled');
-    const completedCount = visits.filter(v => v.status === 'completed').length;
+    const upcomingVisits = visits.filter(v => new Date(v.visit_date) > now && !isToday(v.visit_date) && v.status !== 'cancelled' && v.status !== 'completed' && v.status !== 'attended' && v.status !== 'no_show' && v.status !== 'rescheduled');
+    const pastVisits = visits.filter(v =>
+        (new Date(v.visit_date) < now && !isToday(v.visit_date)) ||
+        ['completed', 'attended', 'no_show', 'rescheduled', 'cancelled'].includes(v.status)
+    );
+    const completedCount = visits.filter(v => ['completed', 'attended'].includes(v.status)).length;
     const thisWeekCount = visits.filter(v => isThisWeek(v.visit_date)).length;
 
     return (
@@ -351,7 +645,17 @@ export const SiteVisitsTab: React.FC = () => {
                 </div>
             )}
 
+            {/* Schedule modal — unchanged */}
             {showModal && <ScheduleModal onClose={() => setShowModal(false)} onSubmit={handleSchedule} />}
+
+            {/* Outcome modal — new */}
+            {outcomeVisit && (
+                <OutcomeModal
+                    visit={outcomeVisit}
+                    onClose={() => setOutcomeVisit(null)}
+                    onConfirm={handleOutcomeConfirm}
+                />
+            )}
 
             {/* Toast */}
             {toast && (
@@ -362,3 +666,4 @@ export const SiteVisitsTab: React.FC = () => {
         </div>
     );
 };
+

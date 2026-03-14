@@ -377,9 +377,10 @@ export interface SiteVisit {
     visit_day: string;
     visit_date: string; // ISO timestamp
     notes?: string;
+    outcome_notes?: string;  // set when team completes/records visit outcome
     reminder_24hr_sent: boolean;
     reminder_morning_sent: boolean;
-    status: string;
+    status: string;         // 'scheduled' | 'completed' | 'attended' | 'no_show' | 'rescheduled' | 'cancelled'
     created_at: string;
 }
 
