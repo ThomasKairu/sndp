@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Facebook, Twitter, Instagram, Linkedin, Phone, Mail, MapPin, ChevronRight, Star, Loader2, CheckCircle, AlertCircle, Send, ExternalLink, Clock, Youtube } from 'lucide-react';
+import { Menu, X, Facebook, Twitter, Instagram, Linkedin, Phone, Mail, MapPin, ChevronRight, Star, Loader2, CheckCircle, AlertCircle, Send, ExternalLink, Clock, Youtube, ShieldCheck } from 'lucide-react';
 import { COMPANY_INFO } from '../constants';
 import ChatWidget from './ChatWidget';
 import { Logo } from './Logo';
 import { submitNewsletterSubscription } from '../services/n8nService';
+import Turnstile from './Turnstile';
+
+// Turnstile site key - set via environment variable
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -169,6 +173,15 @@ const NewsletterForm: React.FC = () => {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
+  const handleTurnstileVerify = React.useCallback((token: string) => {
+    setTurnstileToken(token);
+  }, []);
+
+  const handleTurnstileExpire = React.useCallback(() => {
+    setTurnstileToken(null);
+  }, []);
 
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -186,6 +199,13 @@ const NewsletterForm: React.FC = () => {
       setMessage('Please enter a valid email address.');
       return;
     }
+
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      setStatus('error');
+      setMessage('Please complete the bot verification.');
+      return;
+    }
+
     setStatus('loading');
     setMessage('');
     try {
@@ -248,8 +268,28 @@ const NewsletterForm: React.FC = () => {
         )}
       </div>
 
+      {/* Turnstile Bot Protection */}
+      {TURNSTILE_SITE_KEY && (
+        <div className="space-y-2 mt-2">
+          <Turnstile
+            siteKey={TURNSTILE_SITE_KEY}
+            onVerify={handleTurnstileVerify}
+            onExpire={handleTurnstileExpire}
+            theme="dark"
+            size="normal"
+            className="flex justify-center"
+          />
+          {turnstileToken && (
+            <div className="flex items-center justify-center gap-2 text-green-400 text-xs">
+              <ShieldCheck size={14} />
+              <span>Verified</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {status === 'error' && (
-        <div className="flex items-center gap-2 text-red-400 text-xs animate-fade-in-up">
+        <div className="flex items-center gap-2 text-red-400 text-xs animate-fade-in-up mt-2">
           <AlertCircle size={14} />
           <span>{message}</span>
         </div>
@@ -257,7 +297,7 @@ const NewsletterForm: React.FC = () => {
 
       <button
         type="submit"
-        disabled={status === 'loading'}
+        disabled={status === 'loading' || (TURNSTILE_SITE_KEY !== '' && !turnstileToken)}
         className="w-full bg-brand-600 hover:bg-brand-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-all flex items-center justify-center gap-2 text-sm shadow-lg shadow-brand-900/20"
       >
         {status === 'loading' ? 'Subscribing...' : 'Subscribe'}
