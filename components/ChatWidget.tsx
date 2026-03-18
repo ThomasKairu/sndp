@@ -8,7 +8,12 @@ import { useTurnstile } from './Turnstile';
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
 
 const ChatWidget: React.FC = () => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const tooltipCycleRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const tooltipHideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tooltipInitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [chatEverOpened, setChatEverOpened] = useState(false);
   const [messages, setMessages] = useState<{ role: 'user' | 'model', text: string }[]>([
     { role: 'model', text: 'Jambo! Welcome to Provision Land. How can I help you find your dream property today?' }
   ]);
@@ -20,7 +25,16 @@ const ChatWidget: React.FC = () => {
   // Invisible Turnstile for bot protection on leads
   const { token: turnstileToken, reset: resetTurnstile } = useTurnstile(TURNSTILE_SITE_KEY);
 
-  const toggleChat = () => setIsOpen(!isOpen);
+  const toggleChat = () => {
+    setIsOpen(prev => !prev);
+    if (!chatEverOpened) {
+      setChatEverOpened(true);
+      setShowTooltip(false);
+      if (tooltipInitRef.current) clearTimeout(tooltipInitRef.current);
+      if (tooltipHideRef.current) clearTimeout(tooltipHideRef.current);
+      if (tooltipCycleRef.current) clearInterval(tooltipCycleRef.current);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -30,6 +44,37 @@ const ChatWidget: React.FC = () => {
     scrollToBottom();
   }, [messages, isOpen, leadCaptured]);
 
+  // Tooltip cycle: appear after 3s, hide after 8s, repeat every 45s — stops once chat is opened
+  useEffect(() => {
+    if (chatEverOpened) {
+      // Chat was opened — kill all timers and hide tooltip permanently
+      setShowTooltip(false);
+      if (tooltipInitRef.current) clearTimeout(tooltipInitRef.current);
+      if (tooltipHideRef.current) clearTimeout(tooltipHideRef.current);
+      if (tooltipCycleRef.current) clearInterval(tooltipCycleRef.current);
+      return;
+    }
+
+    const startCycle = () => {
+      setShowTooltip(true);
+      tooltipHideRef.current = setTimeout(() => {
+        setShowTooltip(false);
+      }, 8000);
+    };
+
+    // First appearance after 3 seconds
+    tooltipInitRef.current = setTimeout(() => {
+      startCycle();
+      // Then repeat every 45 seconds
+      tooltipCycleRef.current = setInterval(startCycle, 45000);
+    }, 3000);
+
+    return () => {
+      if (tooltipInitRef.current) clearTimeout(tooltipInitRef.current);
+      if (tooltipHideRef.current) clearTimeout(tooltipHideRef.current);
+      if (tooltipCycleRef.current) clearInterval(tooltipCycleRef.current);
+    };
+  }, [chatEverOpened]);
 
 
   const handleSend = async () => {
@@ -91,7 +136,16 @@ const ChatWidget: React.FC = () => {
       {isOpen && (
         <div className="mb-4 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col h-[500px] transition-all duration-300 ease-in-out animate-fade-in-up">
           <div className="bg-brand-800 p-4 text-white flex justify-between items-center">
-            <Logo className="h-8" variant="horizontal" />
+            <div className="flex items-center gap-3">
+              <Logo className="h-8" variant="horizontal" />
+              <div className="flex items-center gap-1.5">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400"></span>
+                </span>
+                <span className="text-green-300 text-[11px] font-medium tracking-wide">Online</span>
+              </div>
+            </div>
             <button onClick={toggleChat} className="hover:bg-brand-700 p-1 rounded-full transition">
               <X size={20} />
             </button>
@@ -137,6 +191,23 @@ const ChatWidget: React.FC = () => {
                 <Send size={18} />
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Chat invite tooltip */}
+      {showTooltip && !isOpen && !chatEverOpened && (
+        <div
+          className="mb-3 flex items-center gap-2 animate-fade-in-up cursor-pointer"
+          onClick={() => {
+            setShowTooltip(false);
+            setChatEverOpened(true);
+            setIsOpen(true);
+          }}
+          style={{ animation: 'fadeInUp 0.4s ease forwards' }}
+        >
+          <div className="bg-brand-600 text-white text-sm font-medium px-4 py-2 rounded-full shadow-lg whitespace-nowrap select-none" style={{ boxShadow: '0 4px 14px rgba(0,120,200,0.35)' }}>
+            Chat with us 👋
           </div>
         </div>
       )}

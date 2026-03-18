@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { COMPANY_INFO } from '../constants';
 import { getLeads, updateLead, triggerFollowup, Lead, getDashboardStats, parseMessage } from '../services/dataService';
-import { LiveConversationsTab } from '../components/admin/LiveConversationsTab';
+import { WebsiteCRMTab } from '../components/admin/WebsiteCRMTab';
 
 import { PropertiesTab } from '../components/admin/PropertiesTab';
 import { BlogPostsTab } from '../components/admin/BlogPostsTab';
@@ -461,7 +461,7 @@ export const AdminPage: React.FC = () => {
         sitevisits: 'Site Visits',
         installments: '🔐 Installment Plans',
         whatsapp: 'WhatsApp CRM',
-        conversations: '💬 Live Conversations',
+        conversations: '🌐 Website CRM',
         properties: 'Property Listings',
         blog: 'Blog Management',
         broadcasts: 'Broadcasts',
@@ -558,7 +558,7 @@ export const AdminPage: React.FC = () => {
                         { id: 'sitevisits', icon: <Calendar size={20} />, label: 'Site Visits' },
                         { id: 'installments', icon: <CreditCard size={20} />, label: 'Installments' },
                         { id: 'whatsapp', icon: <MessageSquare size={20} />, label: 'WhatsApp CRM' },
-                        { id: 'conversations', icon: <MessageSquare size={20} />, label: 'Live Conversations' },
+                        { id: 'conversations', icon: <MessageSquare size={20} />, label: 'Website CRM' },
                         { id: 'properties', icon: <Home size={20} />, label: 'Properties' },
                         { id: 'blog', icon: <FileText size={20} />, label: 'Blog Posts' },
                         { id: 'broadcasts', icon: <Radio size={20} />, label: 'Broadcasts' },
@@ -599,7 +599,7 @@ export const AdminPage: React.FC = () => {
                                 { id: 'sitevisits', icon: <Calendar size={20} />, label: 'Site Visits' },
                                 { id: 'installments', icon: <CreditCard size={20} />, label: 'Installments' },
                                 { id: 'whatsapp', icon: <MessageSquare size={20} />, label: 'WhatsApp CRM' },
-                                { id: 'conversations', icon: <MessageSquare size={20} />, label: 'Live Conversations' },
+                                { id: 'conversations', icon: <MessageSquare size={20} />, label: 'Website CRM' },
                                 { id: 'properties', icon: <Home size={20} />, label: 'Properties' },
                                 { id: 'blog', icon: <FileText size={20} />, label: 'Blog Posts' },
                                 { id: 'broadcasts', icon: <Radio size={20} />, label: 'Broadcasts' },
@@ -658,7 +658,7 @@ export const AdminPage: React.FC = () => {
                             <StatCard title="Warm Leads" value={warmLeads} icon={<TrendingUp size={20} />} color="bg-orange-50 text-orange-600" />
                             <StatCard title="Hot Leads" value={hotLeads} icon={<Flame size={20} />} color="bg-red-50 text-red-600" />
                             <StatCard title="Converted" value={convertedLeads} icon={<CheckCircle size={20} />} color="bg-green-50 text-green-600" />
-                            <StatCard title="Silent" value={silentLeads} sub="WhatsApp 7+ days" icon={<UserX size={20} />} color="bg-gray-100 text-gray-600" />
+                            <StatCard title="Silent" value={silentLeads} sub="7+ days" icon={<UserX size={20} />} color="bg-gray-100 text-gray-600" />
                             <StatCard title="Pipeline" value={formatKES(pipelineValue)} icon={<DollarSign size={20} />} color="bg-brand-50 text-brand-700" />
                             <StatCard title="Conversion" value={`${conversionRate}%`} icon={<TrendingUp size={20} />} color="bg-purple-50 text-purple-600" />
                         </div>
@@ -746,7 +746,7 @@ export const AdminPage: React.FC = () => {
                                                     </td>
                                                     <td className="p-4">
                                                         <div className="text-sm text-slate-700 font-medium line-clamp-1 max-w-xs">{parseMessage(lead.last_message)}</div>
-                                                        <div className={`text-[10px] inline-block px-1.5 py-0.5 rounded mt-1 font-bold ${isWhatsApp ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
+                                                        <div className={`text-[10px] inline-block px-1.5 py-0.5 rounded mt-1 font-bold ${isWhatsApp ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-teal-50 text-teal-700 border border-teal-200'}`}>
                                                             {isWhatsApp ? 'WHATSAPP' : 'WEBSITE'}
                                                         </div>
                                                     </td>
@@ -777,6 +777,7 @@ export const AdminPage: React.FC = () => {
                 {activeTab === 'sitevisits' && <SiteVisitsTab />}
                 {activeTab === 'installments' && <InstallmentsTab />}
                 {activeTab === 'whatsapp' && <WhatsAppCRMTab />}
+                {activeTab === 'conversations' && <WebsiteCRMTab />}
                 {activeTab === 'properties' && <PropertiesTab />}
                 {activeTab === 'blog' && <BlogPostsTab />}
                 {activeTab === 'broadcasts' && <BroadcastsTab />}
