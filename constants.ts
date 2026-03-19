@@ -217,7 +217,7 @@ export const PROPERTIES: Property[] = [
 export const TEAM: TeamMember[] = [
   {
     id: 't1',
-    name: "Stephen Ndung'u",
+    name: "Mr. Stephen Ndung'u Njoroge",
     role: 'CEO & Founder',
     bio: 'Leading Provision Land & Properties Ltd with a promise to deliver genuinely.',
     image: "/v2/Stephen Ndung'u.webp"
@@ -228,6 +228,13 @@ export const TEAM: TeamMember[] = [
     role: 'Customer Relations',
     bio: 'Our dedicated team is ready to take you for site visits daily.',
     image: '/v2/Sales Team.webp'
+  },
+  {
+    id: 't3',
+    name: 'Mr. Thomas Kairu Muchomba',
+    role: 'ICT Manager',
+    bio: 'Ensuring seamless technology operations and digital innovation at Provision Land & Properties Ltd.',
+    image: '/v2/optimized/Thomas_Kairu.webp'
   }
 ];
 

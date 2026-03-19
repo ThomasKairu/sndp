@@ -43,7 +43,7 @@ export const AboutPage: React.FC = () => {
                 "member": [
                   {
                     "@type": "Person",
-                    "name": "Stephen Ndung'u",
+                    "name": "Mr. Stephen Ndung'u Njoroge",
                     "jobTitle": "CEO & Founder",
                     "description": "Leading Provision Land & Properties Ltd with a promise to deliver genuinely.",
                     "image": "https://provisionlands.co.ke/v2/Stephen%20Ndung'u.webp",
