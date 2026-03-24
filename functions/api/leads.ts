@@ -66,7 +66,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
             const hotLeadsQuery = await client.query(`
                 SELECT COUNT(DISTINCT l.phone) FROM lead_logs l
                 LEFT JOIN lead_status_overrides lso ON lso.phone = l.phone
-                WHERE l.phone NOT IN ('254797331355', '254727774279')
+                WHERE l.phone NOT IN ('254797331355', '254119715900')
                 AND (
                     COALESCE(lso.status, '') = 'hot'
                     OR EXISTS (
@@ -79,7 +79,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
             const warmLeadsQuery = await client.query(`
                 SELECT COUNT(DISTINCT l.phone) FROM lead_logs l
                 LEFT JOIN lead_status_overrides lso ON lso.phone = l.phone
-                WHERE l.phone NOT IN ('254797331355', '254727774279')
+                WHERE l.phone NOT IN ('254797331355', '254119715900')
                 AND COALESCE(lso.status, '') NOT IN ('hot', 'converted', 'CLOSED')
                 AND NOT EXISTS (
                     SELECT 1 FROM lead_logs l3
@@ -90,7 +90,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
             const silentQuery = await client.query(`
                 SELECT COUNT(*) FROM (
                     SELECT phone FROM lead_logs
-                    WHERE phone NOT IN ('254797331355', '254727774279')
+                    WHERE phone NOT IN ('254797331355', '254119715900')
                     GROUP BY phone
                     HAVING MAX(timestamp) < NOW() - INTERVAL '7 days'
                 ) as silents
@@ -135,7 +135,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
               COALESCE(lso.converted, false)                                         AS converted
             FROM lead_logs l
             LEFT JOIN lead_status_overrides lso ON lso.phone = l.phone
-            WHERE l.phone NOT IN ('254797331355', '254727774279')
+            WHERE l.phone NOT IN ('254797331355', '254119715900')
             GROUP BY l.phone, lso.status, lso.converted
             ORDER BY last_seen DESC
         `, [

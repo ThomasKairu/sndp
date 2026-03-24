@@ -167,7 +167,7 @@ export const ContactPage: React.FC = () => {
                   },
                   {
                     "@type": "ContactPoint",
-                    "telephone": "+254727774279",
+                    "telephone": "+254119715900",
                     "contactType": "sales",
                     "areaServed": "KE",
                     "availableLanguage": ["English", "Swahili"]
@@ -223,7 +223,7 @@ export const ContactPage: React.FC = () => {
                   <div>
                     <h3 className="font-bold text-lg mb-1">Phone Number</h3>
                     <p className="text-brand-50">{COMPANY_INFO.phone}</p>
-                    <p className="text-brand-100 mt-1 text-sm">0727 774 279 (Sales)</p>
+                    <p className="text-brand-100 mt-1 text-sm">0119 715 900 (Sales)</p>
                   </div>
                 </div>
 
@@ -453,7 +453,7 @@ export const ContactPage: React.FC = () => {
               </div>
               <h3 className="font-bold text-slate-800 mb-2">Call Us</h3>
               <p className="text-slate-600 text-sm">{COMPANY_INFO.phone}</p>
-              <p className="text-slate-500 text-xs mt-1">Sales: 0727 774 279</p>
+              <p className="text-slate-500 text-xs mt-1">Sales: 0119 715 900</p>
             </div>
             <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow border border-gray-100">
               <div className="bg-green-100 text-green-600 w-12 h-12 rounded-full flex items-center justify-center mb-4">

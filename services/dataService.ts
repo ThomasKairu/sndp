@@ -284,7 +284,7 @@ export async function getLeads(): Promise<Lead[]> {
             throw new Error('Failed to fetch leads');
         }
         const data = await response.json() as Lead[];
-        const INTERNAL_NUMBERS = ['254797331355', '254727774279'];
+        const INTERNAL_NUMBERS = ['254797331355', '254119715900'];
         return data
             .filter(l => !INTERNAL_NUMBERS.includes(l.phone))
             .map(l => {

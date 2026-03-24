@@ -70,7 +70,7 @@ const Navbar: React.FC = () => {
               <div className="bg-gray-100 p-2 rounded flex items-center justify-center">
                 <Phone size={16} className="text-gray-600" />
               </div>
-              <span className="text-[#0ea5e9] font-medium text-sm">+254 727 774 279</span>
+              <span className="text-[#0ea5e9] font-medium text-sm">+254 119 715 900</span>
             </div>
           </div>
         </div>

@@ -352,7 +352,7 @@ export const Home: React.FC = () => {
         <div className="absolute inset-0 bg-[url('/v2/our properties hero background.webp')] bg-cover bg-center opacity-10 mix-blend-overlay"></div>
         <div className="container mx-auto px-4 relative z-10">
           <h2 className="text-3xl font-serif font-bold mb-4">Site Visits Available Daily!</h2>
-          <p className="text-brand-100 mb-8 max-w-2xl mx-auto">Call 0797 331 355 or 0727 774 279 to book your site visit to Matuu, Thika, or Ithanga.</p>
+          <p className="text-brand-100 mb-8 max-w-2xl mx-auto">Call 0797 331 355 or 0119 715 900 to book your site visit to Matuu, Thika, or Ithanga.</p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link to="/contact" className="bg-white text-brand-600 px-8 py-3 rounded-full font-bold hover:bg-gray-100 transition shadow-lg border border-brand-200">
               Book Site Visit
