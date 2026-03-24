@@ -432,6 +432,18 @@ export async function updateSiteVisit(id: number, updates: Partial<SiteVisit>): 
     return response.json();
 }
 
+export async function deleteSiteVisit(id: number): Promise<void> {
+    const response = await fetch(`${API_BASE}/api/site-visits?id=${id}`, {
+        method: 'DELETE',
+        headers: { 'x-internal-secret': getAdminSecret() }
+    });
+    handleAuthError(response);
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Failed to delete site visit: ${text}`);
+    }
+}
+
 // --- WhatsApp CRM Service ---
 
 export interface ConversationMessage {

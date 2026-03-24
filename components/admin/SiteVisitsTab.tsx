@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
     Calendar, CheckCircle, XCircle, Plus, Loader2, Clock,
     User, MapPin, MessageSquare, Bell, AlertCircle, ChevronLeft,
-    RotateCcw, UserX, Ban
+    RotateCcw, UserX, Ban, Pencil, Trash2
 } from 'lucide-react';
-import { getSiteVisits, createSiteVisit, updateSiteVisit, SiteVisit } from '../../services/dataService';
+import { getSiteVisits, createSiteVisit, updateSiteVisit, deleteSiteVisit, SiteVisit } from '../../services/dataService';
 import { getAdminSecret } from '../../services/dataService';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE || '';
@@ -51,9 +51,15 @@ function formatWALink(phone: string) {
     const normalized = cleaned.startsWith('0') ? '254' + cleaned.slice(1) : cleaned.startsWith('254') ? cleaned : '254' + cleaned;
     return `https://wa.me/${normalized}`;
 }
+/** Convert ISO timestamp to "YYYY-MM-DD" and "HH:MM" for input fields */
+function isoToDateAndTime(iso: string) {
+    const d = new Date(iso);
+    const date = d.toLocaleDateString('en-CA'); // YYYY-MM-DD
+    const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+    return { date, time };
+}
 
 // ---- Outcome badge config ----
-// Maps the outcome/status value to a human-readable label + colour
 type OutcomeKey = 'attended' | 'no_show' | 'rescheduled' | 'cancelled' | 'completed' | 'scheduled' | string;
 
 const OUTCOME_META: Record<string, { label: string; color: string; icon: string }> = {
@@ -156,7 +162,6 @@ const OutcomeModal = ({
         }
     };
 
-    // Close on backdrop click
     const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) onClose();
     };
@@ -200,10 +205,10 @@ const OutcomeModal = ({
                         ))}
                     </div>
 
-                    {/* Reschedule date/time picker — shown only when Rescheduled is selected */}
+                    {/* Reschedule date/time picker */}
                     {selected === 'rescheduled' && (
                         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
-                            <p className="text-xs font-bold text-blue-700 uppercase tracking-widest">New Visit Date & Time</p>
+                            <p className="text-xs font-bold text-blue-700 uppercase tracking-widest">New Visit Date &amp; Time</p>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1 block">Date</label>
@@ -273,20 +278,299 @@ const OutcomeModal = ({
     );
 };
 
+// ---- Edit Modal ----
+const STATUS_OPTIONS = ['scheduled', 'attended', 'no_show', 'rescheduled', 'cancelled', 'completed'];
+
+const PROPERTY_NAMES_EDIT = [
+    'Prime ½ Acre in Kiharu', "1 Acre at Mang'u", 'Sagana Makutano Plots',
+    "Ithanga Murang'a Plots", 'Kilimambogo / Oldonyo Sabuk', 'Tola Ngoingwa',
+    'Muguga / Gatuanyaga', 'Makuyu Mananja Acre', 'Matuu Plots',
+    'Landless Thika', 'Thika Town Commercial', 'Mwingi Acre'
+];
+
+const EditModal = ({
+    visit,
+    onClose,
+    onSave,
+}: {
+    visit: SiteVisit;
+    onClose: () => void;
+    onSave: (updated: SiteVisit) => void;
+}) => {
+    const { date: initDate, time: initTime } = isoToDateAndTime(visit.visit_date);
+    const [form, setForm] = useState({
+        customer_name: visit.customer_name,
+        sender_id: visit.sender_id,
+        property_name: visit.property_name,
+        date: initDate,
+        time: initTime,
+        visit_day: visit.visit_day || '',
+        status: visit.status,
+    });
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleSave = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setSubmitting(true);
+        try {
+            const iso = new Date(`${form.date}T${form.time}`).toISOString();
+            const updated = await updateSiteVisit(visit.id, {
+                customer_name: form.customer_name,
+                sender_id: form.sender_id,
+                property_name: form.property_name,
+                visit_date: iso,
+                visit_day: form.visit_day || form.date,
+                status: form.status,
+            });
+            onSave(updated);
+        } catch (err: any) {
+            setError(err.message || 'Failed to save changes.');
+            setSubmitting(false);
+        }
+    };
+
+    const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.target === e.currentTarget) onClose();
+    };
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={handleBackdrop}
+        >
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                {/* Header */}
+                <div className="bg-brand-600 p-5 flex justify-between items-center">
+                    <div>
+                        <h3 className="text-white font-bold text-lg flex items-center gap-2">
+                            <Pencil size={17} /> Edit Visit
+                        </h3>
+                        <p className="text-brand-200 text-xs mt-0.5">ID #{visit.id}</p>
+                    </div>
+                    <button onClick={onClose} className="text-brand-200 hover:text-white transition">
+                        <XCircle size={24} />
+                    </button>
+                </div>
+
+                <form onSubmit={handleSave} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+                    {/* Customer Name */}
+                    <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Customer Name</label>
+                        <input
+                            value={form.customer_name}
+                            onChange={e => setForm(f => ({ ...f, customer_name: e.target.value }))}
+                            required
+                            placeholder="Full name"
+                            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none transition"
+                        />
+                    </div>
+
+                    {/* Phone */}
+                    <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Phone Number</label>
+                        <input
+                            value={form.sender_id}
+                            onChange={e => setForm(f => ({ ...f, sender_id: e.target.value }))}
+                            required
+                            placeholder="07xxxxxxxx"
+                            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none transition"
+                        />
+                    </div>
+
+                    {/* Property */}
+                    <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Property</label>
+                        <select
+                            value={form.property_name}
+                            onChange={e => setForm(f => ({ ...f, property_name: e.target.value }))}
+                            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white transition"
+                        >
+                            {/* Keep the existing value even if it doesn't match list items */}
+                            {!PROPERTY_NAMES_EDIT.includes(form.property_name) && (
+                                <option value={form.property_name}>{form.property_name}</option>
+                            )}
+                            {PROPERTY_NAMES_EDIT.map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                    </div>
+
+                    {/* Date & Time */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Date</label>
+                            <input
+                                type="date"
+                                value={form.date}
+                                onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+                                required
+                                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none transition"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Time</label>
+                            <input
+                                type="time"
+                                value={form.time}
+                                onChange={e => setForm(f => ({ ...f, time: e.target.value }))}
+                                required
+                                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none transition"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Visit Day (text) */}
+                    <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Visit Day Label <span className="font-normal text-slate-400">(optional)</span></label>
+                        <input
+                            value={form.visit_day}
+                            onChange={e => setForm(f => ({ ...f, visit_day: e.target.value }))}
+                            placeholder="e.g. Saturday"
+                            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none transition"
+                        />
+                    </div>
+
+                    {/* Status */}
+                    <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Status</label>
+                        <select
+                            value={form.status}
+                            onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
+                            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white transition"
+                        >
+                            {STATUS_OPTIONS.map(s => (
+                                <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1).replace('_', ' ')}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {error && (
+                        <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm">
+                            <AlertCircle size={14} /> {error}
+                        </div>
+                    )}
+
+                    <div className="flex gap-3 pt-1">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-slate-600 hover:bg-gray-50 transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={submitting}
+                            className="flex-1 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-md"
+                        >
+                            {submitting ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+// ---- Delete Confirmation Dialog ----
+const DeleteConfirmDialog = ({
+    visit,
+    onClose,
+    onConfirm,
+}: {
+    visit: SiteVisit;
+    onClose: () => void;
+    onConfirm: () => Promise<void>;
+}) => {
+    const [deleting, setDeleting] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleConfirm = async () => {
+        setError('');
+        setDeleting(true);
+        try {
+            await onConfirm();
+        } catch (err: any) {
+            setError(err.message || 'Failed to delete visit.');
+            setDeleting(false);
+        }
+    };
+
+    const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.target === e.currentTarget) onClose();
+    };
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={handleBackdrop}
+        >
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
+                <div className="p-6 text-center space-y-4">
+                    <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+                        <Trash2 size={26} className="text-red-600" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-slate-800 text-lg">Delete Visit?</h3>
+                        <p className="text-slate-500 text-sm mt-1">
+                            This will permanently remove{' '}
+                            <span className="font-semibold text-slate-700">{visit.customer_name}'s</span>{' '}
+                            visit. Are you sure?
+                        </p>
+                    </div>
+
+                    {error && (
+                        <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm">
+                            <AlertCircle size={14} /> {error}
+                        </div>
+                    )}
+
+                    <div className="flex gap-3">
+                        <button
+                            onClick={onClose}
+                            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-slate-600 hover:bg-gray-50 transition"
+                        >
+                            Keep It
+                        </button>
+                        <button
+                            onClick={handleConfirm}
+                            disabled={deleting}
+                            className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-md"
+                        >
+                            {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                            Yes, Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // ---- Visit Card ----
-const VisitCard = ({ visit, onMarkComplete, onCancel }: {
+const VisitCard = ({
+    visit,
+    onMarkComplete,
+    onCancel,
+    onEdit,
+    onDelete,
+}: {
     visit: SiteVisit;
     onMarkComplete: (visit: SiteVisit) => void;
     onCancel: (id: number) => void;
+    onEdit: (visit: SiteVisit) => void;
+    onDelete: (visit: SiteVisit) => void;
 }) => {
     const isPast = new Date(visit.visit_date) < new Date() && visit.status !== 'completed';
     const isCancelled = visit.status === 'cancelled';
     const isCompleted = ['completed', 'attended', 'no_show', 'rescheduled', 'cancelled'].includes(visit.status);
     const hasOutcome = ['attended', 'no_show', 'rescheduled', 'cancelled'].includes(visit.status);
+    // Only show delete icon on upcoming/scheduled visits (not past/completed)
+    const isUpcoming = !isCompleted && !isToday(visit.visit_date);
 
-    // Status badge in top-right — show outcome if available, else fallback labels
     const topBadge = hasOutcome
-        ? null // OutcomeBadge is shown below
+        ? null
         : (
             <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
                 visit.status === 'completed' ? 'bg-green-100 text-green-700' :
@@ -298,8 +582,28 @@ const VisitCard = ({ visit, onMarkComplete, onCancel }: {
         );
 
     return (
-        <div className={`bg-white rounded-xl shadow-sm border p-4 mb-3 transition hover:shadow-md ${isCancelled ? 'opacity-60' : ''}`}>
-            <div className="flex items-start justify-between mb-3">
+        <div className={`bg-white rounded-xl shadow-sm border p-4 mb-3 transition hover:shadow-md relative ${isCancelled ? 'opacity-60' : ''}`}>
+            {/* Edit / Delete icon buttons — top right corner */}
+            <div className="absolute top-3 right-3 flex items-center gap-1">
+                <button
+                    onClick={() => onEdit(visit)}
+                    title="Edit visit"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition"
+                >
+                    <Pencil size={13} />
+                </button>
+                {isUpcoming && (
+                    <button
+                        onClick={() => onDelete(visit)}
+                        title="Delete visit"
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
+                    >
+                        <Trash2 size={13} />
+                    </button>
+                )}
+            </div>
+
+            <div className="flex items-start justify-between mb-3 pr-14">
                 <div className="flex items-center gap-2">
                     <div className="h-9 w-9 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold text-sm flex-shrink-0">
                         {visit.customer_name.charAt(0).toUpperCase()}
@@ -324,7 +628,7 @@ const VisitCard = ({ visit, onMarkComplete, onCancel }: {
                     <span>{formatDate(visit.visit_date)} at {formatTime(visit.visit_date)}</span>
                 </div>
             </div>
-            {/* Outcome notes — shown on completed cards */}
+            {/* Outcome notes */}
             {visit.outcome_notes && (
                 <div className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 mb-3 text-xs text-slate-600 italic">
                     📝 {visit.outcome_notes}
@@ -361,8 +665,8 @@ const VisitCard = ({ visit, onMarkComplete, onCancel }: {
 };
 
 const PROPERTY_NAMES = [
-    'Prime ½ Acre in Kiharu', '1 Acre at Mang\u02bcu', 'Sagana Makutano Plots',
-    'Ithanga Murang\u02bca Plots', 'Kilimambogo / Oldonyo Sabuk', 'Tola Ngoingwa',
+    'Prime ½ Acre in Kiharu', "1 Acre at Mang'u", 'Sagana Makutano Plots',
+    "Ithanga Murang'a Plots", 'Kilimambogo / Oldonyo Sabuk', 'Tola Ngoingwa',
     'Muguga / Gatuanyaga', 'Makuyu Mananja Acre', 'Matuu Plots',
     'Landless Thika', 'Thika Town Commercial', 'Mwingi Acre'
 ];
@@ -445,9 +749,15 @@ const ScheduleModal = ({ onClose, onSubmit }: { onClose: () => void; onSubmit: (
 };
 
 // ---- Column ----
-const Column = ({ title, color, visits, onMarkComplete, onCancel, emptyMsg }: {
+const Column = ({
+    title, color, visits, onMarkComplete, onCancel, onEdit, onDelete, emptyMsg
+}: {
     title: string; color: string; visits: SiteVisit[];
-    onMarkComplete: (visit: SiteVisit) => void; onCancel: (id: number) => void; emptyMsg: string;
+    onMarkComplete: (visit: SiteVisit) => void;
+    onCancel: (id: number) => void;
+    onEdit: (visit: SiteVisit) => void;
+    onDelete: (visit: SiteVisit) => void;
+    emptyMsg: string;
 }) => (
     <div className="flex-1 min-w-0">
         <div className={`flex items-center justify-between mb-4 px-1`}>
@@ -460,7 +770,17 @@ const Column = ({ title, color, visits, onMarkComplete, onCancel, emptyMsg }: {
             </div>
         ) : (
             <div className="max-h-[calc(100vh-320px)] overflow-y-auto pr-1 space-y-0">
-                {visits.map(v => <React.Fragment key={v.id}><VisitCard visit={v} onMarkComplete={onMarkComplete} onCancel={onCancel} /></React.Fragment>)}
+                {visits.map(v => (
+                    <React.Fragment key={v.id}>
+                        <VisitCard
+                            visit={v}
+                            onMarkComplete={onMarkComplete}
+                            onCancel={onCancel}
+                            onEdit={onEdit}
+                            onDelete={onDelete}
+                        />
+                    </React.Fragment>
+                ))}
             </div>
         )}
     </div>
@@ -475,6 +795,12 @@ export const SiteVisitsTab: React.FC = () => {
 
     // Outcome modal state
     const [outcomeVisit, setOutcomeVisit] = useState<SiteVisit | null>(null);
+
+    // Edit modal state
+    const [editVisit, setEditVisit] = useState<SiteVisit | null>(null);
+
+    // Delete confirm state
+    const [deleteVisit, setDeleteVisit] = useState<SiteVisit | null>(null);
 
     const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'past'>('today');
     const { toast, showToast } = useToast();
@@ -494,18 +820,17 @@ export const SiteVisitsTab: React.FC = () => {
 
     useEffect(() => { fetchVisits(); }, [fetchVisits]);
 
-    // Opens the outcome modal instead of directly completing
+    // Opens the outcome modal
     const handleMarkComplete = (visit: SiteVisit) => {
         setOutcomeVisit(visit);
     };
 
-    // Called when the user confirms an outcome in the modal
+    // Called when the user confirms an outcome
     const handleOutcomeConfirm = async (result: OutcomeModalResult) => {
         if (!outcomeVisit) return;
         const id = outcomeVisit.id;
 
         if (result.outcome === 'rescheduled' && result.rescheduleDate) {
-            // Special path: update original + create new row atomically via API
             const response = await fetch(`${API_BASE}/api/site-visits?id=${id}`, {
                 method: 'PUT',
                 headers: {
@@ -529,7 +854,6 @@ export const SiteVisitsTab: React.FC = () => {
             ]);
             showToast('Visit rescheduled — new visit created!', 'success');
         } else {
-            // Standard update: status = outcome, outcome_notes = notes
             const updated = await updateSiteVisit(id, {
                 status: result.outcome,
                 outcome_notes: result.outcomeNotes || undefined,
@@ -546,7 +870,29 @@ export const SiteVisitsTab: React.FC = () => {
         setOutcomeVisit(null);
     };
 
-    // Cancel — unchanged behaviour
+    // Edit handlers
+    const handleEdit = (visit: SiteVisit) => {
+        setEditVisit(visit);
+    };
+    const handleEditSave = (updated: SiteVisit) => {
+        setVisits(vs => vs.map(v => v.id === updated.id ? updated : v));
+        setEditVisit(null);
+        showToast('Visit updated successfully ✏️', 'success');
+    };
+
+    // Delete handlers
+    const handleDeleteRequest = (visit: SiteVisit) => {
+        setDeleteVisit(visit);
+    };
+    const handleDeleteConfirm = async () => {
+        if (!deleteVisit) return;
+        await deleteSiteVisit(deleteVisit.id);
+        setVisits(vs => vs.filter(v => v.id !== deleteVisit.id));
+        setDeleteVisit(null);
+        showToast('Visit deleted.', 'success');
+    };
+
+    // Cancel
     const handleCancel = async (id: number) => {
         try {
             await updateSiteVisit(id, { status: 'cancelled' });
@@ -557,7 +903,7 @@ export const SiteVisitsTab: React.FC = () => {
         }
     };
 
-    // Schedule — unchanged behaviour
+    // Schedule
     const handleSchedule = async (data: Partial<SiteVisit>) => {
         try {
             const newVisit = await createSiteVisit(data);
@@ -634,26 +980,44 @@ export const SiteVisitsTab: React.FC = () => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className={activeTab === 'today' ? 'block' : 'hidden md:block'}>
-                        <Column title="Today" color="text-blue-700" visits={todayVisits} onMarkComplete={handleMarkComplete} onCancel={handleCancel} emptyMsg="No visits scheduled today." />
+                        <Column title="Today" color="text-blue-700" visits={todayVisits} onMarkComplete={handleMarkComplete} onCancel={handleCancel} onEdit={handleEdit} onDelete={handleDeleteRequest} emptyMsg="No visits scheduled today." />
                     </div>
                     <div className={activeTab === 'upcoming' ? 'block' : 'hidden md:block'}>
-                        <Column title="Upcoming" color="text-brand-700" visits={upcomingVisits} onMarkComplete={handleMarkComplete} onCancel={handleCancel} emptyMsg="No upcoming visits." />
+                        <Column title="Upcoming" color="text-brand-700" visits={upcomingVisits} onMarkComplete={handleMarkComplete} onCancel={handleCancel} onEdit={handleEdit} onDelete={handleDeleteRequest} emptyMsg="No upcoming visits." />
                     </div>
                     <div className={activeTab === 'past' ? 'block' : 'hidden md:block'}>
-                        <Column title="Past & Completed" color="text-slate-500" visits={pastVisits} onMarkComplete={handleMarkComplete} onCancel={handleCancel} emptyMsg="No past visits." />
+                        <Column title="Past & Completed" color="text-slate-500" visits={pastVisits} onMarkComplete={handleMarkComplete} onCancel={handleCancel} onEdit={handleEdit} onDelete={handleDeleteRequest} emptyMsg="No past visits." />
                     </div>
                 </div>
             )}
 
-            {/* Schedule modal — unchanged */}
+            {/* Schedule modal */}
             {showModal && <ScheduleModal onClose={() => setShowModal(false)} onSubmit={handleSchedule} />}
 
-            {/* Outcome modal — new */}
+            {/* Outcome modal */}
             {outcomeVisit && (
                 <OutcomeModal
                     visit={outcomeVisit}
                     onClose={() => setOutcomeVisit(null)}
                     onConfirm={handleOutcomeConfirm}
+                />
+            )}
+
+            {/* Edit modal */}
+            {editVisit && (
+                <EditModal
+                    visit={editVisit}
+                    onClose={() => setEditVisit(null)}
+                    onSave={handleEditSave}
+                />
+            )}
+
+            {/* Delete confirmation */}
+            {deleteVisit && (
+                <DeleteConfirmDialog
+                    visit={deleteVisit}
+                    onClose={() => setDeleteVisit(null)}
+                    onConfirm={handleDeleteConfirm}
                 />
             )}
 
@@ -666,4 +1030,3 @@ export const SiteVisitsTab: React.FC = () => {
         </div>
     );
 };
-

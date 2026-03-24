@@ -239,11 +239,52 @@ export const onRequestPut: PagesFunction<Env> = async (context) => {
 };
 
 
+export const onRequestDelete: PagesFunction<Env> = async (context) => {
+    const { request, env } = context;
+    const url = new URL(request.url);
+    const id = url.searchParams.get('id');
+    const origin = request.headers.get('Origin');
+    const corsHeaders = {
+        'Access-Control-Allow-Origin': origin || 'https://provisionlands.co.ke',
+        'Access-Control-Allow-Headers': 'Content-Type, x-internal-secret',
+        ...SECURITY_HEADERS,
+    };
+
+    const secret = request.headers.get('x-internal-secret');
+    if (!secret || secret.trim() !== env.N8N_APP_SECRET?.trim()) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+    }
+
+    if (!id) {
+        return new Response(JSON.stringify({ error: 'Missing id parameter' }), { status: 400, headers: corsHeaders });
+    }
+
+    let client;
+    try {
+        client = await getDbClient(env);
+        const result = await client.query('DELETE FROM site_visits WHERE id = $1 RETURNING id', [id]);
+        if (result.rows.length === 0) {
+            return new Response(JSON.stringify({ error: 'Visit not found' }), { status: 404, headers: corsHeaders });
+        }
+        return new Response(JSON.stringify({ deleted: true, id: result.rows[0].id }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+    } catch (err: any) {
+        console.error('Site visits DELETE error:', err);
+        return new Response(JSON.stringify({ error: err.message }), {
+            status: 500,
+            headers: corsHeaders
+        });
+    } finally {
+        if (client) await client.end();
+    }
+};
+
 export const onRequestOptions: PagesFunction = async () => {
     return new Response(null, {
         headers: {
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, x-internal-secret',
         },
     });
