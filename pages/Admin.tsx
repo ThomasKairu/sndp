@@ -320,6 +320,7 @@ export const AdminPage: React.FC = () => {
     }, [lockoutSecondsLeft]);
 
     const fetchLeads = useCallback(async () => {
+        if (!sessionStorage.getItem('admin_secret')) return;
         setLeadsLoading(true);
         try {
             const data = await getLeads();
@@ -406,6 +407,7 @@ export const AdminPage: React.FC = () => {
     const [dashboardStats, setDashboardStats] = useState<any>(null);
 
     const fetchStats = useCallback(async () => {
+        if (!sessionStorage.getItem('admin_secret')) return;
         try {
             const data = await getDashboardStats();
             setDashboardStats(data);
