@@ -262,7 +262,7 @@ export const WhatsAppCRMTab: React.FC = () => {
         } catch (err: any) {
             // ✅ Fix 6: Show red error toast for 3 seconds, keep message in input for retry
             console.error('[handleSendFollowup] Failed to send:', err);
-            showToast('❌ Failed to send. Please retry.', 'error', 3000);
+            showToast(`❌ ${err.message || 'Failed to send. Please retry.'}`, 'error', 5000);
             // Message stays in input — do NOT clear followupMessage
         } finally {
             setSendingFollowup(false);
@@ -270,8 +270,10 @@ export const WhatsAppCRMTab: React.FC = () => {
     };
 
     const filteredLeads = leads.filter(l =>
-        (l.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        l.phone.includes(searchTerm)
+        l.source === 'whatsapp' && (
+            (l.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            l.phone.includes(searchTerm)
+        )
     );
 
     return (

@@ -478,8 +478,14 @@ export async function sendManualFollowup(senderId: string, message: string): Pro
     });
     handleAuthError(response);
     if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`Failed to send follow-up: ${text}`);
+        let errorMsg = `Failed to send follow-up (${response.status})`;
+        try {
+            const data = await response.json() as any;
+            errorMsg = data.details || data.error || data.message || errorMsg;
+        } catch {
+            errorMsg = await response.text();
+        }
+        throw new Error(errorMsg);
     }
 }
 
