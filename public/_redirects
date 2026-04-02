@@ -4,5 +4,9 @@
 # Redirect www to non-www (canonical URL)
 https://www.provisionlands.co.ke/* https://provisionlands.co.ke/:splat 301!
 
+# Static SEO files — serve as-is, never redirect to index.html
+/sitemap.xml  /sitemap.xml  200
+/robots.txt   /robots.txt   200
+
 # Handle all routes for SPA (Single Page Application)
 /*    /index.html   200
