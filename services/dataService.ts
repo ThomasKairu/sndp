@@ -242,13 +242,26 @@ export function extractName(lastResponse: string, lastMessage?: string): string 
         'just','only','also','well','now','then','there','here','this','that',
         'investment','question','price','choice','again','way','naomba',
         'kufikiria','nimefurahi','kukushirikisha','au','kama',
-        'start', 'offer', 'opportunity', 'fit', 'kairu', 'mtwamwaki'
+        'start', 'offer', 'opportunity', 'fit', 'kairu', 'mtwamwaki',
+        'acre', 'cost', 'time', 'tena', 'sana', 'kukupa', 'ipande', 'inathaminiwa', 
+        'aad', 'matuu', 'plot', 'plots', 'land', 'deposit', 'cash', 'size', 
+        'location', 'contact', 'wednesday', 'saturday', 'visit', 'site', 'title', 
+        'deed', 'soil', 'water', 'electricity', 'schools', 'invest', 'booking', 
+        'interest', 'balance', 'months', 'total'
     ]);
+
+    const isFirstWordOfCustomerMsg = (candidate: string) => {
+        if (!lastMessage) return false;
+        const parts = lastMessage.trim().split(/\s+/);
+        if (parts.length <= 1) return false; // Single word messages can be names
+        const firstWord = parts[0].replace(/[^a-zA-Z]/g, '');
+        return firstWord.toLowerCase() === candidate.toLowerCase();
+    };
 
     // First scan the CUSTOMER'S message for self-introduction patterns
     if (lastMessage) {
         const customerPatterns = [
-            /(?:it'?s|I'?m|I am|my name is|this is|called|name'?s)\s+([A-Z][a-z]{2,})/i,
+            /(?:it'?s|I'?m|I am|my name is|this is|called|name'?s|naitwa|ninaita|mimi ni|jina langu ni)\s+([A-Z][a-z]{2,})/i,
             /^([A-Z][a-z]{2,})\s+(?:here|speaking)/i,
             /^([A-Z][a-z]{2,})$/i, // single word that looks like a name
             /\[AGENT\]\s+(?:Hello|Hi|Hey)\s+([A-Z][a-z]{2,})/i
@@ -258,6 +271,7 @@ export function extractName(lastResponse: string, lastMessage?: string): string 
             if (match?.[1]) {
                 const blacklist = ['Steve', 'Provision', 'Land', 'Property', 'Hello', 'Hi', 'Hey', 'Yes', 'Okay', 'Sure', 'WhatsApp'];
                 const candidate = match[1];
+                if (isFirstWordOfCustomerMsg(candidate)) continue;
                 if (!blacklist.includes(candidate) && !NON_NAMES.has(candidate.toLowerCase())) return candidate;
             }
         }
@@ -269,7 +283,7 @@ export function extractName(lastResponse: string, lastMessage?: string): string 
         const alertMatch = lastResponse.match(/\[ALERT_SALES\].*Customer:\s*([A-Z][a-z]+)/i);
         if (alertMatch?.[1]) {
             const candidate = alertMatch[1];
-            if (!NON_NAMES.has(candidate.toLowerCase())) return candidate;
+            if (!isFirstWordOfCustomerMsg(candidate) && !NON_NAMES.has(candidate.toLowerCase())) return candidate;
         }
 
         const stevePatterns = [
@@ -282,6 +296,7 @@ export function extractName(lastResponse: string, lastMessage?: string): string 
             if (match?.[1]) {
                 const blacklist = ['Steve', 'Provision', 'Land', 'Property', 'Wait', 'Here', 'Let', 'The', 'Our', 'Your', 'This'];
                 const candidate = match[1];
+                if (isFirstWordOfCustomerMsg(candidate)) continue;
                 if (!blacklist.includes(candidate) && !NON_NAMES.has(candidate.toLowerCase())) return candidate;
             }
         }
