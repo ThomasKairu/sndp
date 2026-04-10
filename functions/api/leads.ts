@@ -128,7 +128,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
               (SELECT customer_name FROM lead_logs l2 WHERE l2.phone = l.phone AND customer_name IS NOT NULL ORDER BY timestamp DESC LIMIT 1) AS customer_name,
               (SELECT message  FROM lead_logs l2
                WHERE l2.phone = l.phone
-               AND (message ~* $1 OR message ~* $2 OR message ~* $3 OR message ~* $4 OR message ~* $5)
+               AND (message ~* $1 OR message ~* $2 OR message ~* $3 OR message ~* $4 OR message ~* $5 OR message ~* $19)
                ORDER BY timestamp ASC LIMIT 1)                                       AS name_message,
               (SELECT response FROM lead_logs l2
                WHERE l2.phone = l.phone
@@ -162,7 +162,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
             "Sawa\\s+[A-Z][a-z]{2,}",
             "Noted\\s+[A-Z][a-z]{2,}",
             "Nice to meet you,?\\s+[A-Z][a-z]{2,}",
-            "Great to meet you,?\\s+[A-Z][a-z]{2,}"
+            "Great to meet you,?\\s+[A-Z][a-z]{2,}",
+            "\\\\[AGENT\\\\]\\s+(?:Hello|Hi|Hey)\\s+[A-Z][a-z]{2,}"
         ]);
 
         await client.end();

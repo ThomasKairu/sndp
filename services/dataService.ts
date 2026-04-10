@@ -241,7 +241,8 @@ export function extractName(lastResponse: string, lastMessage?: string): string 
         'kabisa','sawa','asante','karibu','poa','sure','great','good','nice',
         'just','only','also','well','now','then','there','here','this','that',
         'investment','question','price','choice','again','way','naomba',
-        'kufikiria','nimefurahi','kukushirikisha','au','kama'
+        'kufikiria','nimefurahi','kukushirikisha','au','kama',
+        'start', 'offer', 'opportunity', 'fit', 'kairu', 'mtwamwaki'
     ]);
 
     // First scan the CUSTOMER'S message for self-introduction patterns
@@ -250,6 +251,7 @@ export function extractName(lastResponse: string, lastMessage?: string): string 
             /(?:it'?s|I'?m|I am|my name is|this is|called|name'?s)\s+([A-Z][a-z]{2,})/i,
             /^([A-Z][a-z]{2,})\s+(?:here|speaking)/i,
             /^([A-Z][a-z]{2,})$/i, // single word that looks like a name
+            /\[AGENT\]\s+(?:Hello|Hi|Hey)\s+([A-Z][a-z]{2,})/i
         ];
         for (const pattern of customerPatterns) {
             const match = lastMessage.match(pattern);
