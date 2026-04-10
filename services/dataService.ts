@@ -192,6 +192,7 @@ export interface Lead {
     // Extended fields returned by updated SQL query (scan all history for names)
     name_message?: string; // first customer message in history that mentions a name
     name_response?: string; // first Steve response in history that addresses customer by name
+    customer_name?: string; // natively saved from n8n webhook
     status: 'hot' | 'warm' | 'NEW' | 'converted' | 'cold' | 'CLOSED';
     converted?: boolean;   // from lead_status_overrides
     // Helper fields added by frontend
@@ -237,9 +238,9 @@ export function extractName(lastResponse: string, lastMessage?: string): string 
     // First scan the CUSTOMER'S message for self-introduction patterns
     if (lastMessage) {
         const customerPatterns = [
-            /(?:it'?s|I'?m|I am|my name is|this is|called|name'?s)\s+([A-Z][a-z]{2,})/i,
-            /^([A-Z][a-z]{2,})\s+(?:here|speaking)/i,
-            /^([A-Z][a-z]{2,})$/, // single word that looks like a name
+            /(?:it'?s|I'?m|I am|my name is|this is|called|name'?s)\s+([A-Z][a-z]{1,})/i,
+            /^([A-Z][a-z]{1,})\s+(?:here|speaking)/i,
+            /^([A-Z][a-z]{1,})$/i, // single word that looks like a name
         ];
         for (const pattern of customerPatterns) {
             const match = lastMessage.match(pattern);
@@ -257,9 +258,9 @@ export function extractName(lastResponse: string, lastMessage?: string): string 
         if (alertMatch?.[1]) return alertMatch[1];
 
         const stevePatterns = [
-            /(?:Hi|Hello|Hey|Thank you|Thanks|Great|Excellent|noted|Understood),?\s+([A-Z][a-z]{2,})[.!,\s]/,
-            /([A-Z][a-z]{2,}),\s+(?:I've noted|that's|this is|your)/i,
-            /your number,?\s+\*?([A-Z][a-z]{2,})\*?/i,
+            /(?:Hi|Hello|Hey|Thank you|Thanks|Great|Excellent|noted|Understood|Perfect|Wonderful|Sawa|Noted|Nice to meet you|Great to meet you),?\s+([A-Z][a-z]{1,})[.!,\s]/i,
+            /([A-Z][a-z]{1,}),\s+(?:I've noted|that's|this is|your)/i,
+            /your number,?\s+\*?([A-Z][a-z]{1,})\*?/i,
         ];
         for (const pattern of stevePatterns) {
             const match = lastResponse.match(pattern);
@@ -293,7 +294,7 @@ export async function getLeads(): Promise<Lead[]> {
                 
                 return {
                     ...l,
-                    name: extractedName || (isWhatsApp ? formatPhone(l.phone) : 'Website Visitor'),
+                    name: l.customer_name || extractedName || (isWhatsApp ? formatPhone(l.phone) : 'Website Visitor'),
                     source: isWhatsApp ? 'whatsapp' : 'website'
                 };
             });

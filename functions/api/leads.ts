@@ -45,6 +45,11 @@ async function ensureOverridesTable(client: any) {
             updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
     `);
+    
+    // Add customer_name to lead_logs if it doesn't exist
+    await client.query(`
+        ALTER TABLE lead_logs ADD COLUMN IF NOT EXISTS customer_name VARCHAR(100);
+    `);
 }
 
 // ─── GET /api/leads ────────────────────────────────────────────────────────────
@@ -120,13 +125,14 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
               COUNT(*)                                                                AS message_count,
               (SELECT message  FROM lead_logs l2 WHERE l2.phone = l.phone ORDER BY timestamp DESC LIMIT 1) AS last_message,
               (SELECT response FROM lead_logs l2 WHERE l2.phone = l.phone ORDER BY timestamp DESC LIMIT 1) AS last_response,
+              (SELECT customer_name FROM lead_logs l2 WHERE l2.phone = l.phone AND customer_name IS NOT NULL ORDER BY timestamp DESC LIMIT 1) AS customer_name,
               (SELECT message  FROM lead_logs l2
                WHERE l2.phone = l.phone
                AND (message ~* $1 OR message ~* $2 OR message ~* $3 OR message ~* $4 OR message ~* $5)
                ORDER BY timestamp ASC LIMIT 1)                                       AS name_message,
               (SELECT response FROM lead_logs l2
                WHERE l2.phone = l.phone
-               AND (response ~* $6 OR response ~* $7 OR response ~* $8)
+               AND (response ~* $6 OR response ~* $7 OR response ~* $8 OR response ~* $9 OR response ~* $10 OR response ~* $11 OR response ~* $12 OR response ~* $13 OR response ~* $14 OR response ~* $15 OR response ~* $16 OR response ~* $17 OR response ~* $18)
                ORDER BY timestamp ASC LIMIT 1)                                       AS name_response,
               COALESCE(
                 lso.status,
@@ -139,14 +145,24 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
             GROUP BY l.phone, lso.status, lso.converted
             ORDER BY last_seen DESC
         `, [
-            "it'?s\\s+[A-Z][a-z]{2,}",
-            "I'?m\\s+[A-Z][a-z]{2,}",
-            "my name is\\s+[A-Z][a-z]{2,}",
-            "this is\\s+[A-Z][a-z]{2,}",
-            "called\\s+[A-Z][a-z]{2,}",
-            "Hi\\s+[A-Z][a-z]{2,}",
-            "Thank you,?\\s+[A-Z][a-z]{2,}",
-            "noted,?\\s+[A-Z][a-z]{2,}"
+            "it'?s\\s+[A-Z][a-z]{1,}",
+            "I'?m\\s+[A-Z][a-z]{1,}",
+            "my name is\\s+[A-Z][a-z]{1,}",
+            "this is\\s+[A-Z][a-z]{1,}",
+            "called\\s+[A-Z][a-z]{1,}",
+            "Hi\\s+[A-Z][a-z]{1,}",
+            "Thank you,?\\s+[A-Z][a-z]{1,}",
+            "noted,?\\s+[A-Z][a-z]{1,}",
+            "Hello\\s+[A-Z][a-z]{1,}",
+            "Hey\\s+[A-Z][a-z]{1,}",
+            "Great\\s+[A-Z][a-z]{1,}",
+            "Perfect\\s+[A-Z][a-z]{1,}",
+            "Excellent\\s+[A-Z][a-z]{1,}",
+            "Wonderful\\s+[A-Z][a-z]{1,}",
+            "Sawa\\s+[A-Z][a-z]{1,}",
+            "Noted\\s+[A-Z][a-z]{1,}",
+            "Nice to meet you,?\\s+[A-Z][a-z]{1,}",
+            "Great to meet you,?\\s+[A-Z][a-z]{1,}"
         ]);
 
         await client.end();
