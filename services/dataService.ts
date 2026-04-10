@@ -235,18 +235,28 @@ export function formatPhone(phone: string): string {
  * Pass name_message / name_response (from full history scan) for best results.
  */
 export function extractName(lastResponse: string, lastMessage?: string): string | null {
+    const NON_NAMES = new Set([
+        'are','for','go','to','on','in','at','be','do','if','of','or','by','an',
+        'the','and','but','not','yes','no','ok','okay','hi','hey','hello',
+        'kabisa','sawa','asante','karibu','poa','sure','great','good','nice',
+        'just','only','also','well','now','then','there','here','this','that',
+        'investment','question','price','choice','again','way','naomba',
+        'kufikiria','nimefurahi','kukushirikisha','au','kama'
+    ]);
+
     // First scan the CUSTOMER'S message for self-introduction patterns
     if (lastMessage) {
         const customerPatterns = [
-            /(?:it'?s|I'?m|I am|my name is|this is|called|name'?s)\s+([A-Z][a-z]{1,})/i,
-            /^([A-Z][a-z]{1,})\s+(?:here|speaking)/i,
-            /^([A-Z][a-z]{1,})$/i, // single word that looks like a name
+            /(?:it'?s|I'?m|I am|my name is|this is|called|name'?s)\s+([A-Z][a-z]{2,})/i,
+            /^([A-Z][a-z]{2,})\s+(?:here|speaking)/i,
+            /^([A-Z][a-z]{2,})$/i, // single word that looks like a name
         ];
         for (const pattern of customerPatterns) {
             const match = lastMessage.match(pattern);
             if (match?.[1]) {
                 const blacklist = ['Steve', 'Provision', 'Land', 'Property', 'Hello', 'Hi', 'Hey', 'Yes', 'Okay', 'Sure', 'WhatsApp'];
-                if (!blacklist.includes(match[1])) return match[1];
+                const candidate = match[1];
+                if (!blacklist.includes(candidate) && !NON_NAMES.has(candidate.toLowerCase())) return candidate;
             }
         }
     }
@@ -255,18 +265,22 @@ export function extractName(lastResponse: string, lastMessage?: string): string 
     if (lastResponse) {
         // Special case: Scan [ALERT_SALES] tag for Customer field
         const alertMatch = lastResponse.match(/\[ALERT_SALES\].*Customer:\s*([A-Z][a-z]+)/i);
-        if (alertMatch?.[1]) return alertMatch[1];
+        if (alertMatch?.[1]) {
+            const candidate = alertMatch[1];
+            if (!NON_NAMES.has(candidate.toLowerCase())) return candidate;
+        }
 
         const stevePatterns = [
-            /(?:Hi|Hello|Hey|Thank you|Thanks|Great|Excellent|noted|Understood|Perfect|Wonderful|Sawa|Noted|Nice to meet you|Great to meet you),?\s+([A-Z][a-z]{1,})[.!,\s]/i,
-            /([A-Z][a-z]{1,}),\s+(?:I've noted|that's|this is|your)/i,
-            /your number,?\s+\*?([A-Z][a-z]{1,})\*?/i,
+            /(?:Hi|Hello|Hey|Thank you|Thanks|Great|Excellent|noted|Understood|Perfect|Wonderful|Sawa|Noted|Nice to meet you|Great to meet you),?\s+([A-Z][a-z]{2,})[.!,\s]/i,
+            /([A-Z][a-z]{2,}),\s+(?:I've noted|that's|this is|your)/i,
+            /your number,?\s+\*?([A-Z][a-z]{2,})\*?/i,
         ];
         for (const pattern of stevePatterns) {
             const match = lastResponse.match(pattern);
             if (match?.[1]) {
                 const blacklist = ['Steve', 'Provision', 'Land', 'Property', 'Wait', 'Here', 'Let', 'The', 'Our', 'Your', 'This'];
-                if (!blacklist.includes(match[1])) return match[1];
+                const candidate = match[1];
+                if (!blacklist.includes(candidate) && !NON_NAMES.has(candidate.toLowerCase())) return candidate;
             }
         }
     }

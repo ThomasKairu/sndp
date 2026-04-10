@@ -145,24 +145,24 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
             GROUP BY l.phone, lso.status, lso.converted
             ORDER BY last_seen DESC
         `, [
-            "it'?s\\s+[A-Z][a-z]{1,}",
-            "I'?m\\s+[A-Z][a-z]{1,}",
-            "my name is\\s+[A-Z][a-z]{1,}",
-            "this is\\s+[A-Z][a-z]{1,}",
-            "called\\s+[A-Z][a-z]{1,}",
-            "Hi\\s+[A-Z][a-z]{1,}",
-            "Thank you,?\\s+[A-Z][a-z]{1,}",
-            "noted,?\\s+[A-Z][a-z]{1,}",
-            "Hello\\s+[A-Z][a-z]{1,}",
-            "Hey\\s+[A-Z][a-z]{1,}",
-            "Great\\s+[A-Z][a-z]{1,}",
-            "Perfect\\s+[A-Z][a-z]{1,}",
-            "Excellent\\s+[A-Z][a-z]{1,}",
-            "Wonderful\\s+[A-Z][a-z]{1,}",
-            "Sawa\\s+[A-Z][a-z]{1,}",
-            "Noted\\s+[A-Z][a-z]{1,}",
-            "Nice to meet you,?\\s+[A-Z][a-z]{1,}",
-            "Great to meet you,?\\s+[A-Z][a-z]{1,}"
+            "it'?s\\s+[A-Z][a-z]{2,}",
+            "I'?m\\s+[A-Z][a-z]{2,}",
+            "my name is\\s+[A-Z][a-z]{2,}",
+            "this is\\s+[A-Z][a-z]{2,}",
+            "called\\s+[A-Z][a-z]{2,}",
+            "Hi\\s+[A-Z][a-z]{2,}",
+            "Thank you,?\\s+[A-Z][a-z]{2,}",
+            "noted,?\\s+[A-Z][a-z]{2,}",
+            "Hello\\s+[A-Z][a-z]{2,}",
+            "Hey\\s+[A-Z][a-z]{2,}",
+            "Great\\s+[A-Z][a-z]{2,}",
+            "Perfect\\s+[A-Z][a-z]{2,}",
+            "Excellent\\s+[A-Z][a-z]{2,}",
+            "Wonderful\\s+[A-Z][a-z]{2,}",
+            "Sawa\\s+[A-Z][a-z]{2,}",
+            "Noted\\s+[A-Z][a-z]{2,}",
+            "Nice to meet you,?\\s+[A-Z][a-z]{2,}",
+            "Great to meet you,?\\s+[A-Z][a-z]{2,}"
         ]);
 
         await client.end();
